@@ -6,6 +6,7 @@ import { Accounts } from './components/component/accounts';
 import { Scripts } from './components/component/scripts';
 import { Test } from './components/component/test';
 import { Trade } from './components/component/trade';
+import { Analytics } from './components/component/analytics';
 
 export default function App() {
   return (
@@ -18,6 +19,8 @@ export default function App() {
           <Route path="/scripts" element={<Scripts />} />
           <Route path="/portfolio" element={<Test />} />
           <Route path="/trade" element={<Trade />} />
+          <Route path="/analytics" element={<Analytics />} />
+
           {/* Add other routes as needed */}
         </Routes>
       </Router>
