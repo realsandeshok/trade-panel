@@ -7,7 +7,7 @@ const getHoldings = async () => {
       s.name AS "scriptName", 
       s.sector AS "sector",
       SUM(t.quantity) AS "totalQuantity",
-      SUM(t.market_cost) AS "totalPurchaseValue",
+      SUM(t.market_cost * t.quantity) AS "totalPurchaseValue",
       SUM(t.market_cost) / NULLIF(SUM(t.quantity), 0) AS "avgHoldingCost"
     FROM transactions t
     JOIN scripts s ON t.script_name = s.name

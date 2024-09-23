@@ -3,15 +3,15 @@ const pool = require("../config/database");
 // Function to get aggregated sector data with script name, quantity, avg cost, sector, and parent company
 const getSectorHoldings = async () => {
   const query = `
-  SELECT 
-  a.account_name AS "accountHolder",
-  t.purchase_date AS "purchaseDate",
-  t.quantity,
-  t.market_cost * t.quantity AS "purchaseValue",  
-  AVG(t.market_cost) OVER (PARTITION BY t.script_name) AS "avgHoldingCost" 
-FROM transactions t
-JOIN accounts a ON t.account_id = a.id
-WHERE t.script_name = $1;
+    SELECT 
+      s.name AS "scriptName", 
+      s.sector AS "sector",
+      s.parent_companies AS "parentCompany",
+      SUM(t.quantity) AS "totalQuantity",
+      SUM(t.market_cost) / NULLIF(SUM(t.quantity), 0) AS "avgHoldingCost"
+    FROM transactions t
+    JOIN scripts s ON t.script_name = s.name
+    GROUP BY s.name, s.sector, s.parent_companies;
   `;
 
   try {
