@@ -27,6 +27,8 @@ interface Script {
   name: string;
   sector: string;
   parent_companies: string;
+  portfolio:string;
+  referred:string;
 }
 
 export function Scripts() {
@@ -37,12 +39,16 @@ export function Scripts() {
     name: '',
     sector: '',
     parent_companies: '',
+    portfolio: '',
+    referred: '',
   });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newScriptValues, setNewScriptValues] = useState<Omit<Script, 'id'>>({
     name: '',
     sector: '',
     parent_companies: '',
+    portfolio:'',
+    referred:'',
   });
 
   useEffect(() => {
@@ -103,6 +109,8 @@ export function Scripts() {
       name: script.name,
       sector: script.sector,
       parent_companies: script.parent_companies,
+      portfolio:script.portfolio,
+      referred:script.referred,
     });
     setIsModalOpen(true);
   };
@@ -364,7 +372,9 @@ export function Scripts() {
             <TableHead>Name</TableHead>
             <TableHead className="hidden sm:table-cell">Sector</TableHead>
             <TableHead className="hidden sm:table-cell">Parent Companies</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead>Portfolio</TableHead>
+            <TableHead>Referred</TableHead>
+            <TableHead>Actions</TableHead>            
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -373,6 +383,8 @@ export function Scripts() {
               <TableCell className="font-medium">{script.name}</TableCell>
               <TableCell className="hidden sm:table-cell">{script.sector}</TableCell>
               <TableCell className="hidden sm:table-cell">{script.parent_companies}</TableCell>
+              <TableCell className="hidden sm:table-cell">{script.portfolio}</TableCell>
+              <TableCell className="hidden sm:table-cell">{script.referred}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
                   <TooltipProvider>
@@ -447,6 +459,26 @@ export function Scripts() {
                     className="mt-1 block w-full border border-gray-300 rounded p-2"
                   />
                 </label>
+                <label className="block mt-2">
+                  Portfolio:
+                  <input
+                    type="text"
+                    name="portfolio"
+                    value={newScriptValues.portfolio}
+                    onChange={handleNewScriptChange}
+                    className="mt-1 block w-full border border-gray-300 rounded p-2"
+                  />
+                </label>
+                <label className="block mt-2">
+                  Referred:
+                  <input
+                    type="text"
+                    name="referred"
+                    value={newScriptValues.referred}
+                    onChange={handleNewScriptChange}
+                    className="mt-1 block w-full border border-gray-300 rounded p-2"
+                  />
+                </label>
                 <div className="mt-4 flex gap-2">
                   <Button type="submit">Add Script</Button>
                   <Button type="button" onClick={() => setIsAddModalOpen(false)}>
@@ -493,6 +525,26 @@ export function Scripts() {
                     type="text"
                     name="parent_companies"
                     value={formValues.parent_companies}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border border-gray-300 rounded p-2"
+                  />
+                </label>
+                <label className="block mt-2">
+                  Portfolio:
+                  <input
+                    type="text"
+                    name="portfolio"
+                    value={formValues.portfolio}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border border-gray-300 rounded p-2"
+                  />
+                </label>
+                <label className="block mt-2">
+                  Referred:
+                  <input
+                    type="text"
+                    name="referred"
+                    value={formValues.referred}
                     onChange={handleFormChange}
                     className="mt-1 block w-full border border-gray-300 rounded p-2"
                   />
