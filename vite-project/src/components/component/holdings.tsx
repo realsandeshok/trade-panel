@@ -36,12 +36,14 @@ interface Holding {
   transactions: Transaction[];
   filteredTransactions?: Transaction[];
   showHolding?: boolean;
+  // eachPrice:number;
 }
 
 interface Transaction {
   accountHolder: string;
   purchaseDate: string;
   quantity: number;
+  // market_cost:string;
   purchaseValue: number;
 }
 
@@ -72,6 +74,7 @@ const Holdings = () => {
         totalQuantity: parseFloat(holding.totalQuantity.toString()),
         totalPurchaseValue: parseFloat(holding.totalPurchaseValue.toString()),
         avgHoldingCost: parseFloat(holding.avgHoldingCost.toString()),
+        // eachPrice:parseFloat(holding.eachPrice.toString()),
         transactions: holding.transactions.map((transaction) => ({
           ...transaction,
           quantity: parseFloat(transaction.quantity.toString()),
@@ -283,6 +286,7 @@ const Holdings = () => {
                                   <TableHead>Account Holder</TableHead>
                                   <TableHead>Purchase Date</TableHead>
                                   <TableHead>Quantity</TableHead>
+                                  <TableHead>Each Price</TableHead>
                                   <TableHead>Purchase Value</TableHead>
                                 </TableRow>
                               </TableHeader>
@@ -305,6 +309,11 @@ const Holdings = () => {
                                         ₹
                                         {transaction.purchaseValue.toLocaleString()}
                                       </TableCell>
+                                      <TableCell>
+                                        {/* {transaction.market_cost} */}
+                                        {transaction.purchaseValue * transaction.quantity}
+                                      </TableCell>
+
                                     </TableRow>
                                   )
                                 )}
