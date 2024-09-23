@@ -25,14 +25,15 @@ const getHoldings = async () => {
 // Function to get transactions for a specific script
 const getTransactionsByScriptName = async (scriptName) => {
   const query = `
-    SELECT 
-      a.account_name AS "accountHolder",
-      t.purchase_date AS "purchaseDate",
-      t.quantity,
-      t.market_cost AS "purchaseValue"
-    FROM transactions t
-    JOIN accounts a ON t.account_id = a.id
-    WHERE t.script_name = $1
+   SELECT 
+  a.account_name AS "accountHolder",
+  t.purchase_date AS "purchaseDate",
+  t.quantity,
+  t.market_cost AS "eachPrice", 
+  t.market_cost * t.quantity AS "purchaseValue" 
+FROM transactions t
+JOIN accounts a ON t.account_id = a.id
+WHERE t.script_name = $1;
   `;
 
   try {
