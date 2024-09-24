@@ -9,8 +9,6 @@ import {useState } from "react"
 import { Login, Signup } from "@/controllers/authController"
 import { EyeIcon, LockIcon, MailIcon, MountainIcon } from "lucide-react"
 
-
-
 export function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

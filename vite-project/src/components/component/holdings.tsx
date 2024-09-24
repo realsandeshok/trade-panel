@@ -43,6 +43,7 @@ interface Transaction {
   accountHolder: string;
   purchaseDate: string;
   quantity: number;
+  eachPrice: number;
   // market_cost:string;
   purchaseValue: number;
 }
@@ -79,6 +80,7 @@ const Holdings = () => {
           ...transaction,
           quantity: parseFloat(transaction.quantity.toString()),
           purchaseValue: parseFloat(transaction.purchaseValue.toString()),
+          eachPrice: parseFloat(transaction.eachPrice.toString())
         })),
       }));
 
@@ -306,12 +308,11 @@ const Holdings = () => {
                                         {transaction.quantity}
                                       </TableCell>
                                       <TableCell>
-                                        ₹
-                                        {transaction.purchaseValue.toLocaleString()}
+                                        {transaction.eachPrice}
                                       </TableCell>
                                       <TableCell>
-                                        {/* {transaction.market_cost} */}
-                                        {transaction.purchaseValue * transaction.quantity}
+                                        ₹
+                                        {transaction.purchaseValue.toLocaleString()}
                                       </TableCell>
 
                                     </TableRow>

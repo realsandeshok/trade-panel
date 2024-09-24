@@ -2,7 +2,7 @@ const pool = require('../config/database');
 
 // Function to add a new script
 const addScript = async (req, res) => {
-    const { name, sector, parent_companies } = req.body;
+    const { name, sector, parent_companies, referred, portfolio } = req.body;
 
     if (!name) {
         return res.status(400).json({ error: 'Name is required' });
@@ -10,14 +10,12 @@ const addScript = async (req, res) => {
 
     try {
         const result = await pool.query(
-            'INSERT INTO scripts (name, sector, parent_companies) VALUES ($1, $2, $3) RETURNING *',
-            [name, sector, parent_companies]
+            'INSERT INTO scripts (name, sector, parent_companies, referred, portfolio) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [name, sector, parent_companies, referred, portfolio]
         );
         res.status(201).json(result.rows[0]);
     } catch (error) {
-        // Check if the error is due to unique constraint violation
         if (error.code === '23505') {
-            // PostgreSQL unique violation error code
             res.status(400).json({ error: 'Script name already exists' });
         } else {
             console.error('Error adding script:', error);
@@ -36,8 +34,6 @@ const getScripts = async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
-
-
 
 // Function to delete a script
 const deleteScript = async (req, res) => {
@@ -63,12 +59,12 @@ const deleteScript = async (req, res) => {
 // Function to update a script
 const updateScript = async (req, res) => {
     const { id } = req.params;
-    const { name, sector, parent_companies } = req.body;
+    const { name, sector, parent_companies, referred, portfolio } = req.body;
 
     try {
         const result = await pool.query(
-            'UPDATE scripts SET name = $1, sector = $2, parent_companies = $3 WHERE id = $4 RETURNING *',
-            [name, sector, parent_companies, id]
+            'UPDATE scripts SET name = $1, sector = $2, parent_companies = $3, referred = $4, portfolio = $5 WHERE id = $6 RETURNING *',
+            [name, sector, parent_companies, referred, portfolio, id]
         );
 
         if (result.rowCount === 0) {
@@ -81,6 +77,7 @@ const updateScript = async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
+
 module.exports = {
     addScript,
     getScripts,
