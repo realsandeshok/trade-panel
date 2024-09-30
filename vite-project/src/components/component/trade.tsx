@@ -42,9 +42,33 @@ interface transactions {
   market_cost: string;
   brokerage: string;
   purchase_date: string;
-  account_name: string;
-  // Add other fields as necessary
+  purchaseDate: string;
+  accountHolder: string;
+  type: string;
+  eachPrice: number;
+  purchaseValue: number;
 }
+// interface Transaction {
+//   accountHolder: string;
+//   purchaseDate: string;
+//   quantity: number;
+//   eachPrice: number;
+//   // market_cost:string;
+//   purchaseValue: number;
+// }
+
+interface Holding {
+  scriptName: string;
+  totalQuantity: number;
+  totalPurchaseValue: number;
+  avgHoldingCost: number;
+  sector: string;
+  transactions: transactions[];
+  showHolding?: boolean;
+  // eachPrice:number;
+}
+
+
 
 export function Trade() {
   const [open, setOpen] = useState(false);
@@ -52,6 +76,21 @@ export function Trade() {
   const [accounts, setAccounts] = useState<accounts[]>([]);
   const [scripts, setScripts] = useState<Scripts[]>([]);
   const [transactions, setTransactions] = useState<transactions[]>([]);
+  const [transactionType, setTransactionType] = useState(''); // Tracks transaction type ("buy" or "sell")
+  const [selectedScript, setSelectedScript] = useState<string>("");
+  const [accountHolders, setAccountHolders] = useState<transactions[]>([]);
+  const [purchaseDate, setPurchaseDate] = useState<string | null>(null);
+  const [selectedAccountHolder, setSelectedAccountHolder] = useState<string>("");
+  const [totalValue, setTotalValue] = useState<number>(0);
+  const [eachValue, setEachValue] = useState<number>(0);
+  // const [purchaseValue, setPurchaseValue] = useState<number>(0);
+
+  const [brokerage, setBrokerage] = useState("")
+  // const [sellmarketcost, setSellMarketCost] = useState("") 
+  const [quantity, setQuantity] = useState<number>(0);
+  const [holdings, setHoldings] = useState<Holding[]>([]);
+  //states for auto
+  const [accountId,setAccountId] = useState<number>(0)
 
   const [formData, setFormData] = useState({
     type: "",
@@ -69,24 +108,30 @@ export function Trade() {
     script: '',
     account: '',
     quantity: '',
-    total_value: '',
-
-    purchase_quantity: '',
+    each_value: '',
+    market_cost: '',
+    selling_quantity: '',
     total_cost: '',
-    total_purchase_value: '',
+    total_sell_value: '',
     purchase_date: '',
 
     sell_market_cost: '',
     brokerage: '',
     f_sell_value: '',
-    t_sell_value: '',
+    // t_sell_value: '',
     p_l: '',
 
     sell_date: '',
     term: '',
   });
 
-
+  // Function to calculate Final Selling value in Sell Form
+  const f_sellingValue = (parseFloat(sellFormData.sell_market_cost) - parseFloat(brokerage)).toFixed(2)
+  // Function to calculate Total Selling value in Sell Form
+  const t_sellingValue = (parseFloat(f_sellingValue) * parseFloat(sellFormData.selling_quantity))
+  // Function to calculate Total Purchase value in while Selling in Sell Form
+  const totalPurchaseValue = eachValue * parseFloat(sellFormData.selling_quantity)
+  const profit_loss = t_sellingValue - totalPurchaseValue
   // Fetch accounts from the API
   useEffect(() => {
     async function fetchAccounts() {
@@ -133,6 +178,38 @@ export function Trade() {
     fetchTransactions();
   }, []);
 
+  //fetch holdings
+  useEffect(() => {
+    fetchHoldings();
+  }, []);
+
+  const fetchHoldings = async () => {
+    try {
+      const response = await fetch("http://localhost:3000/holdings");
+      const data: Holding[] = await response.json();
+
+      // Ensure numerical values are correct
+      const parsedData = data.map((holding) => ({
+        ...holding,
+        transactions: holding.transactions.map((transaction) => ({
+          ...transaction,
+          //   quantity: parseFloat(transaction.quantity.toString()),
+          purchaseValue: parseFloat(transaction.purchaseValue.toString()),
+          eachPrice: parseFloat(transaction.eachPrice.toString()),
+          purchase_date: transaction.purchase_date,
+          accountHolder: transaction.accountHolder
+        })),
+      }));
+      // console.log(parsedData);
+      setHoldings(parsedData)
+    } catch (error) {
+      console.error("Error fetching holdings data:", error);
+    }
+  };
+
+
+
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
@@ -143,6 +220,7 @@ export function Trade() {
       [e.target.name]: e.target.value
     })
   };
+  
 
   // Handle account selection
   const handleAccountChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -161,6 +239,73 @@ export function Trade() {
     });
   };
 
+  const handleSellScriptChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const scriptName = e.target.value;
+    setSelectedScript(scriptName);
+
+    // Find the selected script's holding
+    const selectedHolding = holdings.find(
+      (holding) => holding.scriptName === scriptName
+    );
+
+    if (selectedHolding) {
+      // Update account holders based on selected script
+      setAccountHolders(selectedHolding.transactions);
+      // Find transaction for selected account holder
+      //  const accountHolder = selectedAccountHolder; // Make sure this state is updated correctly
+      //  const transaction = selectedHolding.transactions.find(
+      //    (transaction) => transaction.accountHolder === accountHolder
+      //  ); 
+    }
+    // const purchaseDate = selectedHolding?.transactions?.[0]?.purchase_date || null;
+  };
+
+  const handleAccountHolderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const accountHolder = e.target.value;
+    setSelectedAccountHolder(accountHolder);
+
+    // Find the selected account holder's transaction
+    const selectedTransaction = accountHolders.find(
+      (transaction) => transaction.accountHolder === accountHolder
+    );
+
+    if (selectedTransaction && selectedTransaction.purchaseDate) {
+      console.log('selectedTransaction:', selectedTransaction)
+      // Set the quantity and total value based on the selected account holder
+      setQuantity(parseFloat(selectedTransaction.quantity));
+      setTotalValue(selectedTransaction.purchaseValue);
+      setEachValue(selectedTransaction.eachPrice);
+      // Set the purchase date
+      setPurchaseDate(selectedTransaction.purchaseDate);
+
+
+      const selectedAccount = accounts.find(
+        (account) => account.account_name === selectedTransaction.accountHolder
+      );
+      if (selectedAccount) {
+        setAccountId(selectedAccount.id)
+        const accountId = selectedAccount.id;  // Fetch the account_id
+        const accountName = selectedAccount.account_name;  // Fetch the account_name
+      
+        console.log('Selected Account ID:', accountId);
+        console.log('Selected Account Name:', accountName);
+        
+        setBrokerage(selectedAccount.brokerage_percentage);
+
+        // Update sell form data with purchase date and brokerage percentage
+        setSellFormData({
+          ...sellFormData,
+          purchase_date: selectedTransaction.purchase_date,
+          brokerage: selectedAccount.brokerage_percentage,
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
+    console.log('purchaseDate:', purchaseDate);
+  }, [purchaseDate]);
+
 
   const handleScriptChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedScript = scripts.find(
@@ -169,10 +314,6 @@ export function Trade() {
     setFormData({
       ...formData,
       script: selectedScript?.name || "", // Set the script name based on the selected script
-    });
-    setSellFormData({
-      ...sellFormData,
-      script: selectedScript?.name || '',  // Set the script name based on the selected script
     });
   };
 
@@ -192,6 +333,7 @@ export function Trade() {
           account_id: accounts.find(
             (account) => account.account_name === formData.account
           )?.id,
+          type: transactionType,
         }),
       });
 
@@ -214,31 +356,40 @@ export function Trade() {
   };
 
 
-
   const handleSellSubmit = async () => {
     try {
+
+      // const totalPurchaseValue = parseFloat(sellFormData.total_purchase_value) || 0;
+      // const sellingMarketCost = parseFloat(sellFormData.sell_market_cost) || 0;
+      // const brokerage = (parseFloat(sellFormData.brokerage) || 0) / 100 * sellingMarketCost;
+      // const finalSellingValue = sellingMarketCost - brokerage;
+      // const totalSellingValue = finalSellingValue * (parseFloat(sellFormData.quantity) || 0);
+      // const profitLoss = totalSellingValue - totalPurchaseValue;
+
+
       const response = await fetch('http://localhost:3000/transactions/add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          script_name: sellFormData.script,
-          account_id: accounts.find(account => account.account_name === sellFormData.account)?.id,
-          quantity: sellFormData.quantity,
-          total_value: sellFormData.total_value,
-          purchase_quantity: sellFormData.purchase_quantity,
-          total_cost: sellFormData.total_cost,
-          total_purchase_value: sellFormData.total_purchase_value,
-          purchase_date: sellFormData.purchase_date,
-          sell_market_cost: sellFormData.sell_market_cost,
-          brokerage: sellFormData.brokerage,
-          final_sell_value: sellFormData.f_sell_value,
-          total_sell_value: sellFormData.t_sell_value,
-          profit_loss: sellFormData.p_l,
-          sell_date: sellFormData.sell_date,
+          script_name: selectedScript,             // Use the script name from sellFormData
+          quantity: sellFormData.selling_quantity,               // Quantity being sold
+          sell_market_cost: sellFormData.sell_market_cost, // Market cost at which shares are sold
+          brokerage: sellFormData.brokerage,            // Brokerage fee
+          sell_date: sellFormData.sell_date,            // Date of sale
+          total_sell_value:t_sellingValue,
+          market_cost: eachValue,
+          account_id: accountId,
+          final_sell_value: f_sellingValue,  // Final sell value
+          profit_loss: profit_loss,         // Profit or loss from the transaction
+          type: transactionType,
+          purchase_date: purchaseDate,
         }),
+        
       });
+      const account = accounts.find((account) => account.account_name === selectedAccountHolder);
+      console.log('Selected account:', account);
 
       if (!response.ok) {
         // Handle non-2xx HTTP responses
@@ -270,10 +421,10 @@ export function Trade() {
           <Button variant="outline" size="sm">
             Export
           </Button>
-          <Button size="sm" onClick={() => setOpen(true)}>
+          <Button size="sm" onClick={() => { setOpen(true); setTransactionType('buy') }}>
             Buy
           </Button>
-          <Button size="sm" onClick={()=>setSellOpen(true)}>Sell</Button>
+          <Button size="sm" onClick={() => { setSellOpen(true); setTransactionType('sell') }}>Sell</Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -288,7 +439,6 @@ export function Trade() {
               <TableHead>Total Cost</TableHead>
               <TableHead>Total Purchase Value</TableHead>
               <TableHead>Purchase Date</TableHead>
-              <TableHead>Account Holder</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -303,7 +453,7 @@ export function Trade() {
 
               return (
                 <TableRow key={transaction.id}>
-                  <TableCell className="font-medium">Buy</TableCell>
+                  <TableCell className="font-medium capitalize">{transaction.type}</TableCell>
                   <TableCell>{transaction.script_name}</TableCell>
                   <TableCell>{transaction.quantity}</TableCell>
                   <TableCell>₹{marketCost} </TableCell>
@@ -311,9 +461,8 @@ export function Trade() {
                   <TableCell>₹{totalCostWithBrokerage}</TableCell>
                   <TableCell>₹{totalValue}</TableCell>
                   <TableCell>
-                    {transaction.purchase_date.slice(0, 10)}
+                    {(transaction.purchase_date).slice(2, 10)}
                   </TableCell>
-                  <TableCell>{transaction.account_name}</TableCell>
                 </TableRow>
               );
             })}
@@ -416,175 +565,207 @@ export function Trade() {
           </DialogContent>
         </Dialog>
 
+
+
         {/* sell dialog */}
         <Dialog open={sellOpen} onOpenChange={setSellOpen}>
-  <DialogContent className="max-w-md mx-auto h-auto max-h-[90vh] overflow-y-hidden p-6 rounded-lg bg-white shadow-lg">
-    <DialogHeader>
-      <DialogTitle className="text-lg font-semibold">Sell Share</DialogTitle>
-    </DialogHeader>
+          <DialogContent className="max-w-md mx-auto h-auto max-h-[90vh] overflow-y-hidden p-6 rounded-lg bg-white shadow-lg">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold">Sell Share</DialogTitle>
+            </DialogHeader>
 
-    <form onSubmit={(e) => { e.preventDefault(); handleSellSubmit(); }} className="overflow-y-scroll max-h-[80vh] hide-scrollbar">
-      <div className="space-y-4">
-        <select
-          name="Scripts"
-          value={sellFormData.script}
-          onChange={handleScriptChange}
-          required
-          className="w-full border p-2 rounded"
-        >
-          <option value="">Select Script</option>
-          {scripts.map(script => (
-            <option key={script.id} value={script.name}>
-              {script.name}
-            </option>
-          ))}
-        </select>
+            <form onSubmit={(e) => { e.preventDefault(); handleSellSubmit(); }} className="overflow-y-scroll max-h-[80vh] hide-scrollbar">
+              <div className="space-y-4">
+                <select
+                  name="Scripts"
+                  value={selectedScript}
+                  onChange={handleSellScriptChange}
+                  required
+                  className="w-full border p-2 rounded"
+                >
+                  <option value="">Select Script</option>
+                  {holdings.map((holding) => (
+                    <option key={holding.scriptName} value={holding.scriptName}>
+                      {holding.scriptName}
+                    </option>
+                  ))}
+                </select>
 
-        <select
-          name="account"
-          value={formData.account}
-          onChange={handleAccountChange}
-          required
-          className="w-full border p-2 rounded"
-        >
-          <option value="">Select an account</option>
-          {accounts.map(account => (
-            <option key={account.id} value={account.account_name}>
-              {account.account_name} ({account.broker})
-            </option>
-          ))}
-        </select>
+                <select
+                  name="account"
+                  value={selectedAccountHolder}
+                  onChange={handleAccountHolderChange}
+                  disabled={!selectedScript}
+                  className="w-full border p-2 rounded"
+                >
+                  <option value="">Select an account</option>
+                  {accountHolders.map((transaction, index) => (
+                    <option key={index} value={transaction.accountHolder}>
+                      {transaction.accountHolder}
+                    </option>
+                  ))}
+                </select>
+                <span>{selectedAccountHolder} holds {quantity} share of {selectedScript}, each share bought at price {eachValue}, which costed {totalValue} for {quantity} shares on {purchaseDate ? `${purchaseDate.slice(8, 10)}-${purchaseDate.slice(5, 7)}-${purchaseDate.slice(0, 4)}` : ''}</span>
+                {/* <Input
 
-        {/* Purchase Quantity */}
-        <Input
-          placeholder="Enter purchase quantity"
-          type="number"
-          name="purchase_quantity"
-          value={sellFormData.purchase_quantity}
-          onChange={handleInputChange}
-          required
-          className="w-full border p-2 rounded"
-        />
+                  type="text"
+                  name="quantity"
+                  placeholder="Quantity"
+                  value={'Holds ' + quantity + ' shares'}
+                  onChange={handleInputChange}
+                  readOnly
+                />
+                <Input
+                  type="text"
+                  name="each_value"
+                  placeholder="Total Value of Script"
+                  value={'Cost for each share is ' + eachValue}
+                  readOnly
+                /> */}
 
-        {/* Total Cost */}
-        <Input
-          placeholder="Enter total cost"
-          type="number"
-          name="total_cost"
-          value={sellFormData.total_cost}
-          onChange={handleInputChange}
-          required
-          className="w-full border p-2 rounded"
-        />
+                {/* Each value */}
+                {/* <Input
+                  placeholder="Enter total cost"
+                  type="number"
+                  name="total_cost"
+                  value={eachValue}
+                  onChange={handleInputChange}
+                  readOnly
+                  className="w-full border p-2 rounded"
+                /> */}
 
-        {/* Total Purchase Value */}
-        <Input
-          placeholder="Total purchase value"
-          type="number"
-          name="total_purchase_value"
-          value={sellFormData.total_purchase_value}
-          onChange={handleInputChange}
-          required
-          className="w-full border p-2 rounded"
-        />
+                {/* Total purchase Value */}
+                {/* <Input
+                  placeholder="Total purchase value"
+                  type="number"
+                  name="total_selling_value"
+                  value={totalPurchaseValue}
+                  onChange={handleInputChange}
+                  readOnly
+                  className="w-full border p-2 rounded"
+                /> */}
 
-        {/* Purchase Date */}
-        <Input
-          placeholder="Enter purchase date"
-          type="date"
-          name="purchase_date"
-          value={sellFormData.purchase_date}
-          onChange={handleInputChange}
-          required
-          className="w-full border p-2 rounded"
-        />
 
-        {/* Selling Market Cost */}
-        <Input
-          placeholder="Enter selling market cost"
-          type="number"
-          name="sell_market_cost"
-          value={sellFormData.sell_market_cost}
-          onChange={handleInputChange}
-          required
-          className="w-full border p-2 rounded"
-        />
+                {/* Purchase Date */}
+                {/* <Input
+                                  placeholder="Enter purchase date"
+                                  type="text"
+                                  name="purchase_date"
+                                  value={purchaseDate ? `${purchaseDate.slice(8, 10)}-${purchaseDate.slice(5, 7)}-${purchaseDate.slice(0, 4)}` : ''}
+                                  onChange={handleInputChange}
+                                  readOnly
+                                  className="w-full border p-2 rounded"
+                                /> */}
+                {/* Selling Quantity */}
+                <Input
+                  placeholder="Enter Selling quantity"
+                  type="number"
+                  name="selling_quantity"
+                  value={sellFormData.selling_quantity}
+                  onChange={(e) => {
+                    const sellingQuantity = parseInt(e.target.value);
+                    if (sellingQuantity > quantity || sellingQuantity < 0) {
+                      if (sellingQuantity > quantity) {
+                        alert("Selling quantity cannot exceed existing quantity");
+                      } else {
+                        alert("Selling quantity cannot be less than 0");
+                      }
+                      e.target.value = quantity.toString();
+                    } else {
+                      handleInputChange(e);
+                    }
+                  }}
+                  required
+                  className="w-full border p-2 rounded"
+                />
 
-        {/* Show brokerage automatically based on selected account */}
-        <Input
-          placeholder="Brokerage percentage"
-          type="number"
-          name="brokerage"
-          value={sellFormData.brokerage}
-          readOnly
-          className="w-full border p-2 rounded bg-gray-200"
-        />
 
-        {/* Final Selling Value */}
-        <Input
-          placeholder="Final selling value"
-          type="number"
-          name="f_sell_value"
-          value={sellFormData.f_sell_value}
-          onChange={handleInputChange}
-          required
-          className="w-full border p-2 rounded"
-        />
+                {/* Selling Market Cost */}
+                <Input
+                  placeholder="Enter selling market cost"
+                  type="number"
+                  name="sell_market_cost"
+                  value={sellFormData.sell_market_cost}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full border p-2 rounded"
+                />
 
-        {/* Total Selling Value */}
-        <Input
-          placeholder="Total selling value"
-          type="number"
-          name="t_sell_value"
-          value={sellFormData.t_sell_value}
-          onChange={handleInputChange}
-          required
-          className="w-full border p-2 rounded"
-        />
+                {/* Show brokerage automatically based on selected account */}
+                <Input
+                  placeholder="Brokerage percentage"
+                  type="number"
+                  name="brokerage"
+                  value={brokerage}
+                  readOnly
+                  className="w-full border p-2 rounded bg-gray-200"
+                />
 
-        {/* Profit/Loss */}
-        <Input
-          placeholder="Profit/Loss"
-          type="number"
-          name="p_l"
-          value={sellFormData.p_l}
-          onChange={handleInputChange}
-          required
-          className="w-full border p-2 rounded"
-        />
+                {/* Final Selling Value */}
+                <Input
+                  placeholder="Final selling value"
+                  type="number"
+                  name="f_sell_value"
+                  value={f_sellingValue}
+                  onChange={handleInputChange}
+                  readOnly
+                  className="w-full border p-2 rounded"
+                />
 
-        {/* Selling Date */}
-        <Input
-          placeholder="Enter selling date"
-          type="date"
-          name="sell_date"
-          value={sellFormData.sell_date}
-          onChange={handleInputChange}
-          required
-          className="w-full border p-2 rounded"
-        />
+                {/* Total Selling Value */}
+                <Input
+                  placeholder="Total selling value"
+                  type="number"
+                  name="t_sell_value"
+                  value={t_sellingValue}
+                  onChange={handleInputChange}
+                  readOnly
+                  className="w-full border p-2 rounded"
+                />
 
-        {/* Longterm/Shortterm */}
-        <select
-          name="term"
-          value={sellFormData.term}
-          onChange={handleInputChange}
-          required
-          className="w-full border p-2 rounded"
-        >
-          <option value="">Select term</option>
-          <option value="longterm">Longterm</option>
-          <option value="shortterm">Shortterm</option>
-        </select>
-      </div>
+                {/* Profit/Loss */}
+                <Input
+                  placeholder="Profit/Loss"
+                  type="number"
+                  name="p_l"
+                  value={profit_loss}
+                  onChange={handleInputChange}
+                  readOnly
+                  className="w-full border p-2 rounded"
+                />
 
-      <DialogFooter className="p-3">
-        <Button type="submit" size="sm">Submit</Button>
-        <Button type="button" size="sm" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-      </DialogFooter>
-    </form>
-  </DialogContent>
-</Dialog>
+                {/* Selling Date */}
+                <Input
+                  placeholder="Enter selling date"
+                  type="date"
+                  name="sell_date"
+                  value={sellFormData.sell_date}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full border p-2 rounded"
+                />
+
+                {/* Longterm/Shortterm */}
+                <select
+                  name="term"
+                  value={sellFormData.term}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full border p-2 rounded"
+                >
+                  <option value="">Select term</option>
+                  <option value="longterm">Longterm</option>
+                  <option value="shortterm">Shortterm</option>
+                </select>
+              </div>
+
+              <DialogFooter className="p-3">
+                <Button type="submit" size="sm">Submit</Button>
+                <Button type="button" size="sm" variant="outline" onClick={() => setSellOpen(false)}>Cancel</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
 
 
       </CardContent>
