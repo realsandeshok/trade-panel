@@ -33,7 +33,7 @@ const getTransactionsByScriptName = async (scriptName) => {
   t.market_cost * t.quantity AS "purchaseValue" 
 FROM transactions t
 JOIN accounts a ON t.account_id = a.id
-WHERE t.script_name = $1;
+ WHERE t.script_name = $1 AND t.type = 'buy';
   `;
 
   try {
