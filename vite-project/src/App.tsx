@@ -28,7 +28,7 @@ import {
 
 import { SVGProps, useEffect, useState, } from "react";
 import { JSX } from "react/jsx-runtime";
-import { ArrowRightLeft, FileText } from "lucide-react";
+import { ArrowRightLeft, ArrowUpDown, FileText } from "lucide-react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Auth } from "./components/component/auth"; // Adjust the path as necessary
 import { Accounts } from "./components/component/accounts";
@@ -131,6 +131,19 @@ export default function App() {
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent side="right">Analytics</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href="/bought-sold"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                      prefetch={false}
+                    >
+                      <ArrowUpDown className="h-5 w-5" />
+                      <span className="sr-only">Bought & Sold</span>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Bought & Sold</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </nav>
@@ -461,3 +474,7 @@ function UsersIcon(props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+
+
+
