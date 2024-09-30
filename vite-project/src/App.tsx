@@ -36,6 +36,9 @@ import { Scripts } from "./components/component/scripts";
 import { Trade } from "./components/component/trade";
 import { Analytics } from "./components/component/analytics";
 import Holdings from "./components/component/holdings";
+import { Sold } from "./components/component/sold";
+import Buysell from "./components/component/Buysell";
+
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -255,6 +258,7 @@ export default function App() {
                       variant="outline"
                       size="icon"
                       className="overflow-hidden rounded-full"
+<<<<<<< HEAD
                     >
                       <img
                         src="/placeholder.svg"
@@ -293,6 +297,42 @@ export default function App() {
               </main>
             </div>
           </>
+=======
+                      style={{ aspectRatio: "36/36", objectFit: "cover" }}
+                    />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>Settings</DropdownMenuItem>
+                  <DropdownMenuItem>Support</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>Logout</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </header>
+          </div>
+          <div className="ml-12">
+            <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+              <TooltipProvider>
+                <Routes>
+                  {/* <Route path="/" element={<Auth />} /> */}
+                  <Route path="/accounts" element={<Accounts />} />
+                  <Route path="/scripts" element={<Scripts />} />
+                  <Route path="/holdings" element={<Holdings />} />
+                  <Route path="/trade" element={<Trade />} />
+                  <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/sold" element={<Sold/>} />
+                  < Route path="/buysell" element={<Buysell/>}/>
+
+                  {/* Add other routes as needed */}
+                </Routes>
+              </TooltipProvider>
+            </main>
+          </div>
+        </>
+>>>>>>> 0f346724153a0a7333ca3ab86ca9683386f78836
         ) : (
           <Auth />
         )}
