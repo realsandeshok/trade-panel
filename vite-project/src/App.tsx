@@ -38,7 +38,7 @@ import { Analytics } from "./components/component/analytics";
 import Holdings from "./components/component/holdings";
 import { Sold } from "./components/component/sold";
 import Buysell from "./components/component/Buysell";
-
+import { Toaster } from 'react-hot-toast';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -73,7 +73,7 @@ export default function App() {
                       >
                         <HomeIcon className="h-5 w-5" />
 
-                        <span className="sr-only">Dashboard</span>
+                        <span className="sr-only">Holdings</span>
                       </Link>
                     </TooltipTrigger>
                     <TooltipContent side="right">Holdings</TooltipContent>
@@ -147,28 +147,25 @@ export default function App() {
                     </TooltipTrigger>
                     <TooltipContent side="right">Bought & Sold</TooltipContent>
                   </Tooltip>
-                </TooltipProvider>
-              </nav>
-              <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
-                <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link
-                        href="#"
+                        href="/sold"
                         className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                         prefetch={false}
                       >
-                        <SettingsIcon className="h-5 w-5" />
-                        <span className="sr-only">Settings</span>
+                        <SoldIcon className="h-5 w-5" />
+                        <span className="sr-only">Bought & Sold</span>
                       </Link>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Settings</TooltipContent>
+                    <TooltipContent side="right">Bought & Sold</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </nav>
+
             </aside>
             <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
-              <header className="fixed top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+              <header className="flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button size="icon" variant="outline" className="sm:hidden">
@@ -178,53 +175,70 @@ export default function App() {
                   </SheetTrigger>
                   <SheetContent side="left" className="sm:max-w-xs">
                     <nav className="grid gap-6 text-lg font-medium">
-                      <Link
+                      {/* <Link
                         href="#"
                         className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
                         prefetch={false}
                       >
                         <Package2Icon className="h-5 w-5 transition-all group-hover:scale-110" />
                         <span className="sr-only">Acme Inc</span>
-                      </Link>
+                      </Link> */}
                       <Link
-                        href="#"
+                        href="/holdings"
                         className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
                         prefetch={false}
                       >
                         <HomeIcon className="h-5 w-5" />
-                        Dashboard
+                        Holdings
                       </Link>
                       <Link
-                        href="#"
+                        href="/accounts"
                         className="flex items-center gap-4 px-2.5 text-foreground"
                         prefetch={false}
                       >
                         <UsersIcon className="h-5 w-5" />
-                        Users
+                        Accounts
                       </Link>
                       <Link
-                        href="#"
+                        href="/scripts"
                         className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
                         prefetch={false}
                       >
                         <PackageIcon className="h-5 w-5" />
-                        Products
+                        Scripts
                       </Link>
                       <Link
-                        href="#"
+                        href="/trade"
                         className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
                         prefetch={false}
                       >
                         <UsersIcon className="h-5 w-5" />
-                        Customers
+                        Transactions
                       </Link>
                       <Link
-                        href="#"
+                        href="/analytics"
                         className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
                         prefetch={false}
                       >
                         <LineChartIcon className="h-5 w-5" />
-                        Settings
+                        Analytics
+                      </Link>
+                     
+                      <Link
+                        href="/bought-sold"
+                        className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                        prefetch={false}
+                      >
+                        <ArrowUpDown className="h-5 w-5" />
+                        Bought-Sold
+                      </Link>
+                      <Link
+                        href="/sold"
+                        className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                        prefetch={false}
+                      >
+                        <SoldIcon className="h-5 w-5" />
+                        Sold
                       </Link>
                     </nav>
                   </SheetContent>
@@ -272,16 +286,14 @@ export default function App() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>Settings</DropdownMenuItem>
-                    <DropdownMenuItem>Support</DropdownMenuItem>
-                    <DropdownMenuSeparator />
                     <DropdownMenuItem>Logout</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </header>
             </div>
-            <div className="ml-12">
+            <div className="ml-0 sm:ml-12"> {/* No margin left for mobile view */}
               <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+                <Toaster />
                 <TooltipProvider>
                   <Routes>
                     {/* <Route path="/" element={<Auth />} /> */}
@@ -294,6 +306,7 @@ export default function App() {
                     <Route path="/sold" element={<Sold />} />
                     {/* Add other routes as needed */}
                   </Routes>
+
                 </TooltipProvider>
               </main>
             </div>
@@ -345,6 +358,15 @@ function LineChartIcon(
       <path d="M3 3v18h18" />
       <path d="m19 9-5 5-4-4-3 3" />
     </svg>
+  );
+}
+function SoldIcon(
+  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>
+) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" /><path d="m15 9-6 6" /><path d="M9 9h.01" /><path d="M15 15h.01" /></svg>
   );
 }
 
@@ -435,27 +457,27 @@ function SearchIcon(props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) {
   );
 }
 
-function SettingsIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>
-) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
+// function SettingsIcon(
+//   props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>
+// ) {
+//   return (
+//     <svg
+//       {...props}
+//       xmlns="http://www.w3.org/2000/svg"
+//       width="24"
+//       height="24"
+//       viewBox="0 0 24 24"
+//       fill="none"
+//       stroke="currentColor"
+//       strokeWidth="2"
+//       strokeLinecap="round"
+//       strokeLinejoin="round"
+//     >
+//       <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+//       <circle cx="12" cy="12" r="3" />
+//     </svg>
+//   );
+// }
 
 function UsersIcon(props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) {
   return (

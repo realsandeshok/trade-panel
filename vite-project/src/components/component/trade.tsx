@@ -23,6 +23,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
+import toast from "react-hot-toast";
+// import  {Pagination}  from "@/components/ui/pagination";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+  // PaginationEllipsis,
+} from "@/components/ui/pagination";
+
 interface Scripts {
   id: number;
   name: string;
@@ -48,14 +60,7 @@ interface transactions {
   eachPrice: number;
   purchaseValue: number;
 }
-// interface Transaction {
-//   accountHolder: string;
-//   purchaseDate: string;
-//   quantity: number;
-//   eachPrice: number;
-//   // market_cost:string;
-//   purchaseValue: number;
-// }
+
 
 interface Holding {
   scriptName: string;
@@ -89,8 +94,11 @@ export function Trade() {
   // const [sellmarketcost, setSellMarketCost] = useState("") 
   const [quantity, setQuantity] = useState<number>(0);
   const [holdings, setHoldings] = useState<Holding[]>([]);
-  //states for auto
-  const [accountId,setAccountId] = useState<number>(0)
+  const [accountId, setAccountId] = useState<number>(0)
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
+  const recordsPerPage = 10;
 
   const [formData, setFormData] = useState({
     type: "",
@@ -159,12 +167,59 @@ export function Trade() {
     fetchScripts();
   }, []);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    if (page > 0 && page <= Math.ceil(totalRecords / recordsPerPage)) {
+      setCurrentPage(page);
+    }
+  };
+  const indexOfLastTransaction = currentPage * recordsPerPage;
+  const indexOfFirstTransaction = indexOfLastTransaction - recordsPerPage;
+  const currentTransactions = transactions.slice(indexOfFirstTransaction, indexOfLastTransaction);
+
+
+
+  // Fetch total records once to calculate the total number of pages
+  useEffect(() => {
+    const fetchTotalRecords = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/transactions");
+        if (!response.ok) {
+          throw new Error("Failed to fetch total transactions");
+        }
+        const data = await response.json();
+        // console.log(data.length)
+        setTotalRecords(data.length);  // Assuming the API returns the full array of transactions
+        // console.log(setTotalRecords)
+        // console.log(totalRecords)
+      } catch (error) {
+        console.error("Error fetching total transactions:", error);
+      }
+    };
+    fetchTotalRecords();
+  }, []);
+
+
+
   // fetch transactions
   useEffect(() => {
     // Fetch transactions
     const fetchTransactions = async () => {
       try {
-        const response = await fetch("http://localhost:3000/transactions/");
+        const response = await fetch("http://localhost:3000/transactions?page=${currentPage}&limit=${recordsPerPage}");
         if (!response.ok) {
           throw new Error("Failed to fetch transactions");
         }
@@ -174,9 +229,22 @@ export function Trade() {
         console.error("Error fetching transactions:", error);
       }
     };
-
     fetchTransactions();
-  }, []);
+  }, [currentPage]);
+
+  const totalPages = Math.ceil(totalRecords / recordsPerPage);
+
+
+
+
+
+
+
+
+
+
+
+
 
   //fetch holdings
   useEffect(() => {
@@ -220,7 +288,7 @@ export function Trade() {
       [e.target.name]: e.target.value
     })
   };
-  
+
 
   // Handle account selection
   const handleAccountChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -286,10 +354,10 @@ export function Trade() {
         setAccountId(selectedAccount.id)
         const accountId = selectedAccount.id;  // Fetch the account_id
         const accountName = selectedAccount.account_name;  // Fetch the account_name
-      
+
         console.log('Selected Account ID:', accountId);
         console.log('Selected Account Name:', accountName);
-        
+
         setBrokerage(selectedAccount.brokerage_percentage);
 
         // Update sell form data with purchase date and brokerage percentage
@@ -302,9 +370,6 @@ export function Trade() {
     }
   };
 
-  useEffect(() => {
-    console.log('purchaseDate:', purchaseDate);
-  }, [purchaseDate]);
 
 
   const handleScriptChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -349,8 +414,16 @@ export function Trade() {
 
       // Close the dialog after successful submission
       setOpen(false);
+      toast.success("Purchase successful", {
+        duration: 3000,
+        position: 'top-right',
+      });
     } catch (error) {
       console.error("Error adding transaction:", error);
+      toast.error("Error adding transaction.", {
+        duration: 3000,
+        position: 'top-right',
+      });
       // Handle the error appropriately, e.g., show an error message
     }
   };
@@ -358,15 +431,6 @@ export function Trade() {
 
   const handleSellSubmit = async () => {
     try {
-
-      // const totalPurchaseValue = parseFloat(sellFormData.total_purchase_value) || 0;
-      // const sellingMarketCost = parseFloat(sellFormData.sell_market_cost) || 0;
-      // const brokerage = (parseFloat(sellFormData.brokerage) || 0) / 100 * sellingMarketCost;
-      // const finalSellingValue = sellingMarketCost - brokerage;
-      // const totalSellingValue = finalSellingValue * (parseFloat(sellFormData.quantity) || 0);
-      // const profitLoss = totalSellingValue - totalPurchaseValue;
-
-
       const response = await fetch('http://localhost:3000/transactions/add', {
         method: 'POST',
         headers: {
@@ -378,7 +442,7 @@ export function Trade() {
           sell_market_cost: sellFormData.sell_market_cost, // Market cost at which shares are sold
           brokerage: sellFormData.brokerage,            // Brokerage fee
           sell_date: sellFormData.sell_date,            // Date of sale
-          total_sell_value:t_sellingValue,
+          total_sell_value: t_sellingValue,
           market_cost: eachValue,
           account_id: accountId,
           final_sell_value: f_sellingValue,  // Final sell value
@@ -386,7 +450,7 @@ export function Trade() {
           type: transactionType,
           purchase_date: purchaseDate,
         }),
-        
+
       });
       const account = accounts.find((account) => account.account_name === selectedAccountHolder);
       console.log('Selected account:', account);
@@ -403,11 +467,20 @@ export function Trade() {
 
       // Close the dialog after successful submission
       setSellOpen(false);
+      toast.success("Sold successfully!", {
+        duration: 3000,
+        position: 'top-right',
+      });
     } catch (error) {
       console.error('Error adding transaction:', error);
+      toast.error("Error adding transaction.", {
+        duration: 3000,
+        position: 'top-right',
+      });
       // Handle the error appropriately, e.g., show an error message
     }
   }
+
 
 
   return (
@@ -442,7 +515,7 @@ export function Trade() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transactions.map((transaction) => {
+            {currentTransactions.map((transaction) => {
               const marketCost = parseInt(transaction.market_cost);
               const brokerage = parseInt(transaction.brokerage);
               const quantity = parseInt(transaction.quantity);
@@ -468,6 +541,39 @@ export function Trade() {
             })}
           </TableBody>
         </Table>
+
+        {/* Pagination controls */}
+        <Pagination>
+          <PaginationPrevious
+            onClick={() => handlePageChange(currentPage - 1)}
+          // disabled={currentPage === 1}
+          />
+
+          <PaginationContent>
+            {Array.from({ length: totalPages }, (_, index) => {
+              const page = index + 1;
+              return (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    onClick={() => handlePageChange(page)}
+                    isActive={currentPage === page}
+                    // Apply disabled styles if the link is inactive
+                    className={currentPage === page ? '' : 'pointer-events-none opacity-50'}
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              );
+            })}
+          </PaginationContent>
+
+          <PaginationNext
+            onClick={() => handlePageChange(currentPage + 1)}
+          // disabled={currentPage === totalPages}
+          />
+        </Pagination>
+
+
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent>
             <DialogHeader>
@@ -664,17 +770,25 @@ export function Trade() {
                   value={sellFormData.selling_quantity}
                   onChange={(e) => {
                     const sellingQuantity = parseInt(e.target.value);
+
                     if (sellingQuantity > quantity || sellingQuantity < 0) {
                       if (sellingQuantity > quantity) {
-                        alert("Selling quantity cannot exceed existing quantity");
+                        toast.error("Selling quantity cannot exceed existing quantity.", {
+                          duration: 5000,
+                          position: 'top-right',
+                        });
                       } else {
-                        alert("Selling quantity cannot be less than 0");
+                        toast.error("Selling quantity cannot be less than 0.", {
+                          duration: 5000,
+                          position: 'top-right',
+                        });
                       }
-                      e.target.value = quantity.toString();
+                      e.target.value = quantity.toString(); // Reset to existing quantity
                     } else {
-                      handleInputChange(e);
+                      handleInputChange(e); // Call your existing input change handler
                     }
                   }}
+
                   required
                   className="w-full border p-2 rounded"
                 />

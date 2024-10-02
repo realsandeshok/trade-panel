@@ -26,6 +26,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+  // PaginationEllipsis,
+} from "@/components/ui/pagination";
+
+
 
 interface Holding {
   scriptName: string;
@@ -60,13 +71,44 @@ const Holdings = () => {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [filteredHoldings, setFilteredHoldings] = useState<Holding[]>([]);
 
+
+  const [summaryCurrentPage, setSummaryCurrentPage] = useState(1);
+  const [generalCurrentPage, setGeneralCurrentPage] = useState(1);
+  // const [currentPage,setCurrentPage] = useState(1)
+  const [totalRecords, setTotalRecords] = useState<number>(0);
+  const recordsPerPage = 10;
+
+
   useEffect(() => {
     fetchHoldings();
   }, []);
 
+
+
+  // Fetch total records once to calculate the total number of pages
+  useEffect(() => {
+    const fetchTotalRecords = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/holdings");
+        if (!response.ok) {
+          throw new Error("Failed to fetch total holdings");
+        }
+        const data = await response.json();
+        // console.log(data.length)
+        setTotalRecords(data.length);  // Assuming the API returns the full array of transactions
+        // console.log(setTotalRecords)
+        // console.log(totalRecords)
+      } catch (error) {
+        console.error("Error fetching total holdinhgs:", error);
+      }
+    };
+    fetchTotalRecords();
+  }, []);
+
+
   const fetchHoldings = async () => {
     try {
-      const response = await fetch("http://localhost:3000/holdings");
+      const response = await fetch("http://localhost:3000/holdings?page=${currentPage}&limit=${recordsPerPage}");
       const data: Holding[] = await response.json();
 
       // Ensure numerical values are correct
@@ -90,6 +132,7 @@ const Holdings = () => {
       console.error("Error fetching holdings data:", error);
     }
   };
+
 
   const totalInvestment = filteredHoldings.reduce(
     (sum, holding) => sum + holding.totalPurchaseValue,
@@ -129,7 +172,7 @@ const Holdings = () => {
             const isDateMatch =
               !filters.date ||
               new Date(transaction.purchaseDate).toISOString().slice(0, 10) ===
-                filters.date;
+              filters.date;
 
             return isAccountHolderMatch && isDateMatch;
           }
@@ -149,6 +192,27 @@ const Holdings = () => {
     setFilteredHoldings(filtered);
     setIsFilterOpen(false);
   };
+  // Handle page change
+  const handleSummaryPageChange = (page: number) => {
+    if (page > 0 && page <= Math.ceil(totalRecords / recordsPerPage)) {
+      setSummaryCurrentPage(page);
+    }
+  };
+  const handleGeneralPageChange = (page: number) => {
+    if (page > 0 && page <= Math.ceil(totalRecords / recordsPerPage)) {
+      setGeneralCurrentPage(page);
+    }
+  };
+  const indexOfLastSummaryHoldings = summaryCurrentPage * recordsPerPage;
+  const indexOfLastGeneralHoldings = generalCurrentPage * recordsPerPage;
+
+  const indexOfFirstSummaryHoldings = indexOfLastSummaryHoldings - recordsPerPage;
+  const indexOfFirstGeneralHoldings = indexOfLastGeneralHoldings - recordsPerPage;
+
+  const summaryCurrentHoldings = filteredHoldings.slice(indexOfFirstSummaryHoldings, indexOfLastSummaryHoldings);
+  const generalCurrentHoldings = filteredHoldings.slice(indexOfFirstGeneralHoldings, indexOfLastGeneralHoldings);
+
+  const totalPages = Math.ceil(totalRecords / recordsPerPage);
 
   return (
     <Card className="w-full">
@@ -252,7 +316,7 @@ const Holdings = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredHoldings.map((holding) => (
+                {generalCurrentHoldings.map((holding) => (
                   <>
                     <TableRow key={holding.scriptName}>
                       <TableCell>
@@ -327,7 +391,39 @@ const Holdings = () => {
                 ))}
               </TableBody>
             </Table>
+            {/* Pagination controls */}
+            <Pagination>
+              <PaginationPrevious
+                onClick={() => handleGeneralPageChange(generalCurrentPage - 1)}
+              // disabled={currentPage === 1}
+              />
+
+              <PaginationContent>
+                {Array.from({ length: totalPages }, (_, index) => {
+                  const page = index + 1;
+                  return (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        onClick={() => handleGeneralPageChange(page)}
+                        isActive={generalCurrentPage === page}
+                        // Apply disabled styles if the link is inactive
+                        className={generalCurrentPage === page ? '' : 'pointer-events-none opacity-50'}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                })}
+              </PaginationContent>
+
+              <PaginationNext
+                onClick={() => handleGeneralPageChange(generalCurrentPage + 1)}
+              // disabled={currentPage === totalPages}
+              />
+            </Pagination>
           </TabsContent>
+
+
           <TabsContent value="summary">
             <table className="w-full">
               <thead className="bg-gray-100">
@@ -341,7 +437,7 @@ const Holdings = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredHoldings.map((holding) => (
+                {summaryCurrentHoldings.map((holding) => (
                   <tr key={holding.scriptName}>
                     <td className="px-4 py-2">{holding.scriptName}</td>
                     <td className="px-4 py-2">
@@ -362,6 +458,36 @@ const Holdings = () => {
                 ))}
               </tbody>
             </table>
+            {/* Pagination controls */}
+            <Pagination>
+              <PaginationPrevious
+                onClick={() => handleSummaryPageChange(summaryCurrentPage - 1)}
+              // disabled={currentPage === 1}
+              />
+
+              <PaginationContent>
+                {Array.from({ length: totalPages }, (_, index) => {
+                  const page = index + 1;
+                  return (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        onClick={() => handleSummaryPageChange(page)}
+                        isActive={summaryCurrentPage === page}
+                        // Apply disabled styles if the link is inactive
+                        className={summaryCurrentPage === page ? '' : 'pointer-events-none opacity-50'}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                })}
+              </PaginationContent>
+
+              <PaginationNext
+                onClick={() => handleSummaryPageChange(summaryCurrentPage + 1)}
+              // disabled={currentPage === totalPages}
+              />
+            </Pagination>
             <div className="mt-6 bg-white rounded-lg shadow-md p-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold">Total Investment</h2>
