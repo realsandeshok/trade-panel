@@ -135,6 +135,8 @@ const Holdings = () => {
     }
   };
 
+  // console.log(fetchHoldings)
+
   const totalInvestment = filteredHoldings.reduce(
     (sum, holding) => sum + holding.totalPurchaseValue,
     0
@@ -172,9 +174,13 @@ const Holdings = () => {
               transaction.accountHolder === filters.accountHolder;
 
             const isDateMatch =
-              !filters.date ||
-              new Date(transaction.purchaseDate).toISOString().slice(0, 10) ===
-                filters.date;
+              (!filters.startDate && !filters.endDate) || // If both dates are empty, match all
+              ((!filters.startDate ||
+                new Date(transaction.purchaseDate) >=
+                  new Date(filters.startDate)) && // Match if the transaction date is after or on the start date
+                (!filters.endDate ||
+                  new Date(transaction.purchaseDate) <=
+                    new Date(filters.endDate))); // Match if the transaction date is before or on the end date
 
             return isAccountHolderMatch && isDateMatch;
           }
@@ -335,8 +341,10 @@ const Holdings = () => {
               </TableHeader>
               <TableBody>
                 {filteredHoldings.map((holding) => (
-                  <>
-                    <TableRow key={holding.scriptName}>
+                  <React.Fragment key={holding.scriptName}>
+                    {" "}
+                    {/* Use React.Fragment with a key */}
+                    <TableRow>
                       <TableCell>
                         <Button
                           variant="ghost"
