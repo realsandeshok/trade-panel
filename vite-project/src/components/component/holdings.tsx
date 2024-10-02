@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -44,7 +45,7 @@ interface Transaction {
   purchaseDate: string;
   quantity: number;
   eachPrice: number;
-  // market_cost:string;
+  type:string;
   purchaseValue: number;
 }
 
@@ -54,7 +55,8 @@ const Holdings = () => {
   const [filters, setFilters] = useState({
     script: "All Scripts",
     accountHolder: "All Account Holders",
-    date: "",
+    startDate: "",
+    endDate: "",
   });
 
   const [holdings, setHoldings] = useState<Holding[]>([]);
@@ -80,7 +82,7 @@ const Holdings = () => {
           ...transaction,
           quantity: parseFloat(transaction.quantity.toString()),
           purchaseValue: parseFloat(transaction.purchaseValue.toString()),
-          eachPrice: parseFloat(transaction.eachPrice.toString())
+          eachPrice: parseFloat(transaction.eachPrice.toString()),
         })),
       }));
 
@@ -90,6 +92,8 @@ const Holdings = () => {
       console.error("Error fetching holdings data:", error);
     }
   };
+
+  // console.log(fetchHoldings)
 
   const totalInvestment = filteredHoldings.reduce(
     (sum, holding) => sum + holding.totalPurchaseValue,
@@ -108,7 +112,8 @@ const Holdings = () => {
     setFilters({
       script: "All Scripts",
       accountHolder: "All Account Holders",
-      date: "",
+      startDate: "",
+      endDate: "",
     });
     applyFilters(holdings); // Reset and apply filters to the original data
   };
@@ -127,9 +132,13 @@ const Holdings = () => {
               transaction.accountHolder === filters.accountHolder;
 
             const isDateMatch =
-              !filters.date ||
-              new Date(transaction.purchaseDate).toISOString().slice(0, 10) ===
-                filters.date;
+              (!filters.startDate && !filters.endDate) || // If both dates are empty, match all
+              ((!filters.startDate ||
+                new Date(transaction.purchaseDate) >=
+                  new Date(filters.startDate)) && // Match if the transaction date is after or on the start date
+                (!filters.endDate ||
+                  new Date(transaction.purchaseDate) <=
+                    new Date(filters.endDate))); // Match if the transaction date is before or on the end date
 
             return isAccountHolderMatch && isDateMatch;
           }
@@ -221,13 +230,30 @@ const Holdings = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Input
-                      type="date"
-                      value={filters.date}
-                      onChange={(e) =>
-                        handleFilterChange("date", e.target.value)
-                      }
-                    />
+                    <div className="flex flex-row space-x-2 w-full">
+                      <div className="flex flex-col flex-1">
+                        <label htmlFor="startDate">From</label>
+                        <Input
+                          id="startDate"
+                          type="date"
+                          value={filters.startDate}
+                          onChange={(e) =>
+                            handleFilterChange("startDate", e.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="flex flex-col flex-1">
+                        <label htmlFor="endDate">To</label>
+                        <Input
+                          id="endDate"
+                          type="date"
+                          value={filters.endDate}
+                          onChange={(e) =>
+                            handleFilterChange("endDate", e.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
                   </div>
                   <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={resetFilters}>
@@ -243,7 +269,6 @@ const Holdings = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead></TableHead>
                   <TableHead>Script Name</TableHead>
                   <TableHead>Total Quantity</TableHead>
                   <TableHead>Total Purchase Value</TableHead>
@@ -253,8 +278,10 @@ const Holdings = () => {
               </TableHeader>
               <TableBody>
                 {filteredHoldings.map((holding) => (
-                  <>
-                    <TableRow key={holding.scriptName}>
+                  <React.Fragment key={holding.scriptName}>
+                    {" "}
+                    {/* Use React.Fragment with a key */}
+                    <TableRow>
                       <TableCell>
                         <Button
                           variant="ghost"
@@ -314,7 +341,6 @@ const Holdings = () => {
                                         ₹
                                         {transaction.purchaseValue.toLocaleString()}
                                       </TableCell>
-
                                     </TableRow>
                                   )
                                 )}
@@ -323,7 +349,7 @@ const Holdings = () => {
                           </TableCell>
                         </TableRow>
                       )}
-                  </>
+                  </React.Fragment>
                 ))}
               </TableBody>
             </Table>
@@ -335,7 +361,7 @@ const Holdings = () => {
                   <th className="px-4 py-3 text-left font-medium">Stock</th>
                   <th className="px-4 py-3 text-left font-medium">Account</th>
                   <th className="px-4 py-3 text-right font-medium">
-                    Total Shares
+                    Total Share
                   </th>
                   <th className="px-4 py-3 text-right font-medium">Value</th>
                 </tr>
@@ -355,9 +381,6 @@ const Holdings = () => {
                     <td className="px-4 py-2 text-right">
                       ₹{holding.totalPurchaseValue.toLocaleString()}
                     </td>
-                    {/* <td className="px-4 py-2">
-                      ₹{holding.avgHoldingCost.toFixed(2)}
-                    </td> */}
                   </tr>
                 ))}
               </tbody>

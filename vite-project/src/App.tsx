@@ -1,4 +1,6 @@
-// import React from 'react';
+
+import React from "react";
+import { useLocation } from "react-router-dom";
 import {
   TooltipProvider,
   Tooltip,
@@ -38,14 +40,37 @@ import { Analytics } from "./components/component/analytics";
 import Holdings from "./components/component/holdings";
 import { Sold } from "./components/component/sold";
 import Buysell from "./components/component/Buysell";
-
+import { jwtDecode } from "jwt-decode";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("token"); // Adjust according to how you store the token
-    setIsLoggedIn(!!token); // Set isLoggedIn to true if token exists
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        console.log("Decoded token:", decoded); // Log the decoded token to inspect it
+
+        const currentTime = Date.now() / 1000; // Current time in seconds
+
+        if (decoded.exp && decoded.exp > currentTime) {
+          // Token is valid
+          setIsLoggedIn(true);
+        } else {
+          // Token has expired or no exp field
+          setIsLoggedIn(false);
+          localStorage.removeItem("token"); // Remove expired token
+        }
+      } catch (error) {
+        // Handle token decode error (e.g., invalid token format)
+        console.error("Token decode error:", error);
+        setIsLoggedIn(false);
+      }
+    } else {
+      setIsLoggedIn(false);
+    }
   }, []);
 
   return (
@@ -229,7 +254,7 @@ export default function App() {
                     </nav>
                   </SheetContent>
                 </Sheet>
-                <Breadcrumb className="hidden md:flex">
+                {/* <Breadcrumb className="hidden md:flex">
                   <BreadcrumbList>
                     <BreadcrumbItem>
                       <BreadcrumbLink asChild>
@@ -243,7 +268,8 @@ export default function App() {
                       <BreadcrumbPage>Accounts</BreadcrumbPage>
                     </BreadcrumbItem>
                   </BreadcrumbList>
-                </Breadcrumb>
+                </Breadcrumb> */}
+                <DynamicBreadcrumbs />
                 <div className="relative ml-auto flex-1 md:grow-0">
                   <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -305,6 +331,61 @@ export default function App() {
     </Router>
   );
 }
+
+// Dynamic Breadcrumbs
+
+const breadcrumbNameMap = {
+  accounts: "My Accounts",
+  scripts: "Script Management",
+  holdings: "Portfolio Holdings",
+  trade: "Transactions",
+  analytics: "Analytics",
+  // "bought-sold": "Buy/Sell",
+  sold: "Sold Scripts",
+};
+
+const DynamicBreadcrumbs = () => {
+  const location = useLocation();
+  const pathnames = location.pathname.split("/").filter((x) => x);
+
+  return (
+    <Breadcrumb className="hidden md:flex">
+      <BreadcrumbList>
+        {/* Always display the Dashboard as the first breadcrumb */}
+        {/* <BreadcrumbItem>
+          <BreadcrumbLink asChild>
+            <Link href="/holdings">Holdings</Link>
+          </BreadcrumbLink>
+        </BreadcrumbItem> */}
+
+        {pathnames.map((segment, index) => {
+          const isLast = index === pathnames.length - 1;
+          const routeTo = `/${pathnames.slice(0, index + 1).join("/")}`;
+          
+           // Type assertion here to ensure TypeScript allows us to index breadcrumbNameMap
+           const breadcrumbName = (breadcrumbNameMap as Record<string, string>)[segment] || segment;
+
+          return (
+            <React.Fragment key={routeTo}>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                {isLast ? (
+                  <BreadcrumbPage>{breadcrumbName}</BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink asChild>
+                    <Link href={routeTo}>{breadcrumbName}</Link>
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
+            </React.Fragment>
+          );
+        })}
+      </BreadcrumbList>
+    </Breadcrumb>
+  );
+};
+
+
 
 function HomeIcon(props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) {
   return (
