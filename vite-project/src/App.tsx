@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -41,7 +40,7 @@ import Holdings from "./components/component/holdings";
 import { Sold } from "./components/component/sold";
 import Buysell from "./components/component/Buysell";
 import { jwtDecode } from "jwt-decode";
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "react-hot-toast";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -52,7 +51,6 @@ export default function App() {
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        console.log("Decoded token:", decoded); // Log the decoded token to inspect it
 
         const currentTime = Date.now() / 1000; // Current time in seconds
 
@@ -188,7 +186,6 @@ export default function App() {
                   </Tooltip>
                 </TooltipProvider>
               </nav>
-
             </aside>
             <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
               <header className="flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
@@ -249,7 +246,7 @@ export default function App() {
                         <LineChartIcon className="h-5 w-5" />
                         Analytics
                       </Link>
-                     
+
                       <Link
                         href="/bought-sold"
                         className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
@@ -318,7 +315,9 @@ export default function App() {
                 </DropdownMenu>
               </header>
             </div>
-            <div className="ml-0 sm:ml-12"> {/* No margin left for mobile view */}
+            <div className="ml-0 sm:ml-12">
+              {" "}
+              {/* No margin left for mobile view */}
               <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
                 <Toaster />
                 <TooltipProvider>
@@ -333,7 +332,6 @@ export default function App() {
                     <Route path="/sold" element={<Sold />} />
                     {/* Add other routes as needed */}
                   </Routes>
-
                 </TooltipProvider>
               </main>
             </div>
@@ -375,9 +373,10 @@ const DynamicBreadcrumbs = () => {
         {pathnames.map((segment, index) => {
           const isLast = index === pathnames.length - 1;
           const routeTo = `/${pathnames.slice(0, index + 1).join("/")}`;
-          
-           // Type assertion here to ensure TypeScript allows us to index breadcrumbNameMap
-           const breadcrumbName = (breadcrumbNameMap as Record<string, string>)[segment] || segment;
+
+          // Type assertion here to ensure TypeScript allows us to index breadcrumbNameMap
+          const breadcrumbName =
+            (breadcrumbNameMap as Record<string, string>)[segment] || segment;
 
           return (
             <React.Fragment key={routeTo}>
@@ -398,8 +397,6 @@ const DynamicBreadcrumbs = () => {
     </Breadcrumb>
   );
 };
-
-
 
 function HomeIcon(props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) {
   return (
@@ -442,13 +439,25 @@ function LineChartIcon(
     </svg>
   );
 }
-function SoldIcon(
-  props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>
-) {
+function SoldIcon(props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
-      xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" /><path d="m15 9-6 6" /><path d="M9 9h.01" /><path d="M15 15h.01" /></svg>
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" />
+      <path d="m15 9-6 6" />
+      <path d="M9 9h.01" />
+      <path d="M15 15h.01" />
+    </svg>
   );
 }
 
