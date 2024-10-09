@@ -3,7 +3,7 @@ const pool = require('../config/database');
 
 const getAccounts = async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM accounts');
+        const result = await pool.query('SELECT * FROM accounts ORDER BY id DESC');
         res.status(200).json(result.rows);
     } catch (error) {
         console.error('Error fetching accounts:', error);
@@ -11,16 +11,16 @@ const getAccounts = async (req, res) => {
     }
 };
 const addAccount = async (req, res) => {
-    const { account_name, broker_id, broker, client_code, brokerage_percentage } = req.body;
+    const { account_name, broker_id, broker, client_code, brokerage_percentage, parent_account_name } = req.body;
 
-    if (!account_name || !broker_id || !broker || !client_code || !brokerage_percentage) {
+    if (!account_name || !broker_id || !broker || !client_code || !brokerage_percentage || !parent_account_name) {
         return res.status(400).json({ error: 'All fields are required' });
     }
 
     try {
         const result = await pool.query(
-            'INSERT INTO accounts (account_name, broker_id, broker, client_code, brokerage_percentage) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [account_name, broker_id, broker, client_code, brokerage_percentage]
+            'INSERT INTO accounts (account_name, broker_id, broker, client_code, brokerage_percentage, parent_account_name) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [account_name, broker_id, broker, client_code, brokerage_percentage, parent_account_name]
         );
         res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -55,7 +55,7 @@ const deleteAccount = async (req, res) => {
 };
 const updateAccount = async (req, res) => {
     const { id } = req.params;
-    const { account_name, broker_id, broker, client_code, brokerage_percentage } = req.body;
+    const { account_name, broker_id, broker, client_code, brokerage_percentage, parent_account_name } = req.body;
 
     if (!id) {
         return res.status(400).json({ error: 'Account ID is required' });
@@ -85,6 +85,10 @@ const updateAccount = async (req, res) => {
     if (brokerage_percentage) {
         setClause += `brokerage_percentage = $${valueIndex++}, `;
         values.push(brokerage_percentage);
+    }
+    if (parent_account_name) {
+        setClause += `parent_account_name = $${valueIndex++}, `;
+        values.push(parent_account_name);
     }
 
     if (setClause === '') {

@@ -7,6 +7,7 @@ const getTransactions = async (req, res) => {
             SELECT t.*, a.account_name
             FROM transactions t
             JOIN accounts a ON t.account_id = a.id
+            ORDER BY t.id DESC
         `);
         res.status(200).json(result.rows);
     } catch (error) {

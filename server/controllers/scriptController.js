@@ -27,7 +27,7 @@ const addScript = async (req, res) => {
 // Function to get all scripts
 const getScripts = async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM scripts');
+        const result = await pool.query('SELECT * FROM scripts ORDER BY id DESC');
         res.status(200).json(result.rows);
     } catch (error) {
         console.error('Error fetching scripts:', error);

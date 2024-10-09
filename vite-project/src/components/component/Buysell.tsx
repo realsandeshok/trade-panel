@@ -1,7 +1,20 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../ui/table";
 import {
   Pagination,
   PaginationContent,
@@ -11,6 +24,7 @@ import {
   PaginationNext,
   // PaginationEllipsis,
 } from "@/components/ui/pagination";
+import { format } from 'date-fns';
 
 // Interface Definitions
 interface Transaction {
@@ -26,13 +40,13 @@ interface Transaction {
   purchaseValue: number;
   final_sell_value: number;
   total_sell_value: number;
+  profit_loss: "";
 }
 
 const Buysell = () => {
   const [buyTransactions, setBuyTransactions] = useState<Transaction[]>([]);
   const [sellTransactions, setSellTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-
 
   const [buyCurrentPage, setBuyCurrentPage] = useState(1);
   const [buyTotalRecords, setBuyTotalRecords] = useState<number>(0);
@@ -57,41 +71,39 @@ const Buysell = () => {
   // const indexOfFirstTransaction = indexOfLastTransaction - recordsPerPage;
   // const currentTransactions = soldTransactions.slice(indexOfFirstTransaction, indexOfLastTransaction);
 
-
-
   // Handle Page Change for Buy Tab
-  const handleBuyPageChange = (page:number) => {
+  const handleBuyPageChange = (page: number) => {
     if (page > 0 && page <= Math.ceil(buyTotalRecords / recordsPerPage)) {
       setBuyCurrentPage(page);
     }
   };
 
   // Handle Page Change for Sell Tab
-  const handleSellPageChange = (page:number) => {
+  const handleSellPageChange = (page: number) => {
     if (page > 0 && page <= Math.ceil(sellTotalRecords / recordsPerPage)) {
       setSellCurrentPage(page);
     }
   };
 
-
-
   // Fetch transactions data
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const response = await fetch("http://localhost:3000/transactions?page=${currentPage}&limit=${recordsPerPage}");
+        const response = await fetch(
+          "http://localhost:3000/transactions?page=${currentPage}&limit=${recordsPerPage}"
+        );
         const data: Transaction[] = await response.json();
 
         // Filter buy and sell transactions
-        const allBuyTransactions = data.filter(t => t.type === 'buy');
-        const allSellTransactions = data.filter(t => t.type === 'sell');
+        const allBuyTransactions = data.filter((t) => t.type === "buy");
+        const allSellTransactions = data.filter((t) => t.type === "sell");
 
         setBuyTransactions(allBuyTransactions);
         setSellTransactions(allSellTransactions);
-        setBuyTotalRecords(allBuyTransactions.length);  // Assuming the API returns the full array of transactions
-        setSellTotalRecords(allSellTransactions.length);  // Assuming the API returns the full array of transactions
+        setBuyTotalRecords(allBuyTransactions.length); // Assuming the API returns the full array of transactions
+        setSellTotalRecords(allSellTransactions.length); // Assuming the API returns the full array of transactions
       } catch (error) {
-        console.error('Error fetching transactions:', error);
+        console.error("Error fetching transactions:", error);
       } finally {
         setLoading(false); // Set loading to false once data is fetched
       }
@@ -108,12 +120,13 @@ const Buysell = () => {
   const buyTotalPages = Math.ceil(buyTotalRecords / recordsPerPage);
   const sellTotalPages = Math.ceil(sellTotalRecords / recordsPerPage);
 
-
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-3xl font-bold">Buy and Sell</CardTitle>
-        <CardDescription>View and manage your buy and sell transactions.</CardDescription>
+        <CardDescription>
+          View and manage your buy and sell transactions.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="buy">
@@ -132,19 +145,31 @@ const Buysell = () => {
                   <TableHead>Quantity</TableHead>
                   <TableHead>Each Price</TableHead>
                   <TableHead>Total Purchase Value</TableHead>
-                  <TableHead>Purchase Date</TableHead>
+                  <TableHead>Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {buyPaginatedTransactions.map((transaction) => (
-
                   <TableRow key={transaction.id}>
-                    <TableCell>{new Date(transaction.purchase_date).toLocaleDateString('en-GB', { month: '2-digit', year: 'numeric' })}</TableCell>
+                    <TableCell>
+                      {new Date(transaction.purchase_date).toLocaleDateString(
+                        "en-GB",
+                        { month: "2-digit", year: "numeric" }
+                      )}
+                    </TableCell>
                     <TableCell>{transaction.account_name}</TableCell>
                     <TableCell>{transaction.quantity}</TableCell>
                     <TableCell>{transaction.market_cost}</TableCell>
-                    <TableCell>{parseFloat(transaction.market_cost) * parseFloat(transaction.quantity)}</TableCell>
-                    <TableCell>{new Date(transaction.purchase_date).toLocaleDateString('en-GB')}</TableCell>
+                    <TableCell>
+                      {parseFloat(transaction.market_cost) *
+                        parseFloat(transaction.quantity)}
+                    </TableCell>
+                    <TableCell>
+                      {format(
+                        new Date(transaction.purchase_date),
+                        "dd-MM-yyyy"
+                      )}
+                    </TableCell>{" "}
                   </TableRow>
                 ))}
               </TableBody>
@@ -153,7 +178,7 @@ const Buysell = () => {
             <Pagination>
               <PaginationPrevious
                 onClick={() => handleBuyPageChange(buyCurrentPage - 1)}
-              // disabled={currentPage === 1}
+                // disabled={currentPage === 1}
               />
 
               <PaginationContent>
@@ -165,7 +190,11 @@ const Buysell = () => {
                         onClick={() => handleBuyPageChange(page)}
                         isActive={buyCurrentPage === page}
                         // Apply disabled styles if the link is inactive
-                        className={buyCurrentPage === page ? '' : 'pointer-events-none opacity-50'}
+                        className={
+                          buyCurrentPage === page
+                            ? ""
+                            : "pointer-events-none opacity-50"
+                        }
                       >
                         {page}
                       </PaginationLink>
@@ -176,14 +205,10 @@ const Buysell = () => {
 
               <PaginationNext
                 onClick={() => handleBuyPageChange(buyCurrentPage + 1)}
-              // disabled={currentPage === totalPages}
+                // disabled={currentPage === totalPages}
               />
             </Pagination>
-
           </TabsContent>
-
-
-
 
           {/* Sell Transactions Table */}
           <TabsContent value="sell">
@@ -195,18 +220,39 @@ const Buysell = () => {
                   <TableHead>Quantity</TableHead>
                   <TableHead>Each Price</TableHead>
                   <TableHead>Total Sold Value</TableHead>
-                  <TableHead>Purchase Date</TableHead>
+                  <TableHead>Profit Loss</TableHead>
+                  <TableHead>Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {sellPaginatedTransactions.map((transaction) => (
                   <TableRow key={transaction.id}>
-                    <TableCell>{new Date(transaction.purchase_date).toLocaleDateString('en-GB', { month: '2-digit', year: 'numeric' })}</TableCell>
+                    <TableCell>
+                      {new Date(transaction.purchase_date).toLocaleDateString(
+                        "en-GB",
+                        { month: "2-digit", year: "numeric" }
+                      )}
+                    </TableCell>
                     <TableCell>{transaction.account_name}</TableCell>
                     <TableCell>{transaction.quantity}</TableCell>
                     <TableCell>{transaction.final_sell_value}</TableCell>
-                    <TableCell>{transaction.total_sell_value}</TableCell>
-                    <TableCell>{new Date(transaction.purchase_date).toLocaleDateString('en-GB')}</TableCell>
+                    <TableCell>
+                      {transaction.total_sell_value !== null &&
+                      transaction.total_sell_value !== undefined
+                        ? parseFloat(
+                            transaction.total_sell_value.toString()
+                          ).toFixed(2)
+                        : "N/A"}
+                    </TableCell>
+                    <TableCell>
+                      {parseFloat(transaction.profit_loss).toFixed(2)}
+                    </TableCell>
+                    <TableCell>
+                      {format(
+                        new Date(transaction.purchase_date),
+                        "dd-MM-yyyy"
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -215,7 +261,7 @@ const Buysell = () => {
             <Pagination>
               <PaginationPrevious
                 onClick={() => handleSellPageChange(sellCurrentPage - 1)}
-              // disabled={currentPage === 1}
+                // disabled={currentPage === 1}
               />
 
               <PaginationContent>
@@ -227,7 +273,11 @@ const Buysell = () => {
                         onClick={() => handleSellPageChange(page)}
                         isActive={sellCurrentPage === page}
                         // Apply disabled styles if the link is inactive
-                        className={sellCurrentPage === page ? '' : 'pointer-events-none opacity-50'}
+                        className={
+                          sellCurrentPage === page
+                            ? ""
+                            : "pointer-events-none opacity-50"
+                        }
                       >
                         {page}
                       </PaginationLink>
@@ -238,10 +288,9 @@ const Buysell = () => {
 
               <PaginationNext
                 onClick={() => handleSellPageChange(sellCurrentPage + 1)}
-              // disabled={currentPage === totalPages}
+                // disabled={currentPage === totalPages}
               />
             </Pagination>
-
           </TabsContent>
         </Tabs>
       </CardContent>

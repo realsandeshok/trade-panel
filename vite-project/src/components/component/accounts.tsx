@@ -23,11 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
 // import { DropdownMenuCheckboxItem } from "@radix-ui/react-dropdown-menu"
-import {
-  CirclePlusIcon,
-  FilePenIcon,
-  Trash2Icon,
-} from "lucide-react";
+import { CirclePlusIcon, FilePenIcon, Trash2Icon } from "lucide-react";
 import { Dialog } from "@headlessui/react";
 import toast from "react-hot-toast";
 import {
@@ -43,12 +39,13 @@ import {
 // Define the TypeScript interface for the account data
 interface Account {
   id: number;
+  parent_account_name: string;
   account_name: string;
   broker_id: string;
   broker: string;
   created_at: string;
   client_code: string;
-  brokerage_percentage: string;
+  brokerage_percentage: number;
 }
 
 export function Accounts() {
@@ -58,29 +55,29 @@ export function Accounts() {
   const [formValues, setFormValues] = useState<
     Omit<Account, "id" | "created_at">
   >({
+    parent_account_name: "",
     account_name: "",
     broker_id: "",
     broker: "",
     client_code: "",
-    brokerage_percentage: "",
+    brokerage_percentage: 0,
   });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newAccountValues, setNewAccountValues] = useState({
+    parent_account_name: "",
     account_name: "",
     broker_id: "",
     broker: "",
     client_code: "",
-    brokerage_percentage: "",
+    brokerage_percentage: 0,
   });
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<number | null>(null);
 
-
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState<number>(0);
   const recordsPerPage = 10;
-
 
   useEffect(() => {
     // Fetch data from the API
@@ -118,7 +115,7 @@ export function Accounts() {
           console.error("Error deleting account:", error);
           toast.error("Failed to delete account.", {
             duration: 3000,
-            position: 'top-right',
+            position: "top-right",
           });
         })
         .finally(() => setIsConfirmModalOpen(false)); // Close the modal after operation
@@ -146,14 +143,14 @@ export function Accounts() {
         setIsAddModalOpen(false);
         toast.success("Account added successfully", {
           duration: 3000,
-          position: 'top-right',
-        })
+          position: "top-right",
+        });
       })
       .catch((error) => {
         console.error("Error adding account:", error);
         toast.error("Failed to add account.", {
           duration: 3000,
-          position: 'top-right',
+          position: "top-right",
         });
       });
   };
@@ -161,6 +158,7 @@ export function Accounts() {
   const handleEdit = (account: Account) => {
     setEditingAccount(account);
     setFormValues({
+      parent_account_name: account.parent_account_name,
       account_name: account.account_name,
       broker_id: account.broker_id,
       broker: account.broker,
@@ -198,13 +196,13 @@ export function Accounts() {
           setIsModalOpen(false);
           toast.success("Account updated successfully!", {
             duration: 3000,
-            position: 'top-right',
+            position: "top-right",
           });
         } else {
           console.error("Failed to update account");
           toast.error("Failed to update account.", {
             duration: 3000,
-            position: 'top-right',
+            position: "top-right",
           });
         }
       })
@@ -212,64 +210,77 @@ export function Accounts() {
         console.error("Error updating account:", error);
         toast.error("Error updating account.", {
           duration: 3000,
-          position: 'top-right',
+          position: "top-right",
         });
       });
   };
 
-
- // Handle page change
- const handlePageChange = (page: number) => {
-  if (page > 0 && page <= Math.ceil(totalRecords / recordsPerPage)) {
-    setCurrentPage(page);
-  }
-};
-
- // Calculate indices for slicing the accounts array
- const indexOfLastAccount = currentPage * recordsPerPage;
- const indexOfFirstAccount = indexOfLastAccount - recordsPerPage;
- const currentAccounts = accounts.slice(indexOfFirstAccount, indexOfLastAccount);
-
-
- // Fetch total records once to calculate the total number of pages
- useEffect(() => {
-  const fetchTotalRecords = async () => {
-    try {
-      const response = await fetch("http://localhost:3000/accounts");
-      if (!response.ok) {
-        throw new Error("Failed to fetch total accounts");
-      }
-      const data = await response.json();
-      setTotalRecords(data.length); // Assuming the API returns the full array of accounts
-    } catch (error) {
-      console.error("Error fetching total accounts:", error);
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    if (page > 0 && page <= Math.ceil(totalRecords / recordsPerPage)) {
+      setCurrentPage(page);
     }
   };
 
-  fetchTotalRecords();
-}, []);
+  // Calculate indices for slicing the accounts array
+  const indexOfLastAccount = currentPage * recordsPerPage;
+  const indexOfFirstAccount = indexOfLastAccount - recordsPerPage;
+  const currentAccounts = accounts.slice(
+    indexOfFirstAccount,
+    indexOfLastAccount
+  );
 
- // Fetch accounts data based on current page
- useEffect(() => {
-  const fetchAccounts = async () => {
-    try {
-      const response = await fetch(`http://localhost:3000/accounts?page=${currentPage}&limit=${recordsPerPage}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch accounts");
+  // Fetch total records once to calculate the total number of pages
+  useEffect(() => {
+    const fetchTotalRecords = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/accounts");
+        if (!response.ok) {
+          throw new Error("Failed to fetch total accounts");
+        }
+        const data = await response.json();
+        setTotalRecords(data.length); // Assuming the API returns the full array of accounts
+      } catch (error) {
+        console.error("Error fetching total accounts:", error);
       }
-      const data = await response.json();
-      setAccounts(data);
-    } catch (error) {
-      console.error("Error fetching accounts:", error);
-    }
+    };
+
+    fetchTotalRecords();
+  }, []);
+
+  // Fetch accounts data based on current page
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/accounts?page=${currentPage}&limit=${recordsPerPage}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch accounts");
+        }
+        const data = await response.json();
+        setAccounts(data);
+      } catch (error) {
+        console.error("Error fetching accounts:", error);
+      }
+    };
+
+    fetchAccounts();
+  }, [currentPage]);
+
+  const totalPages = Math.ceil(totalRecords / recordsPerPage);
+
+  const modalClose = () => {
+    setIsAddModalOpen(false);
+    setNewAccountValues({
+      parent_account_name: "",
+      account_name: "",
+      broker_id: "",
+      broker: "",
+      client_code: "",
+      brokerage_percentage: 0,
+    });
   };
-
-  fetchAccounts();
-}, [currentPage]);
-
-const totalPages = Math.ceil(totalRecords / recordsPerPage);
-
-
 
   return (
     <Card x-chunk="dashboard-06-chunk-0">
@@ -302,6 +313,9 @@ const totalPages = Math.ceil(totalRecords / recordsPerPage);
               </TableHead>
               <TableHead className="hidden sm:table-cell">%</TableHead>
               <TableHead className="hidden sm:table-cell">Account</TableHead>
+              <TableHead className="hidden sm:table-cell">
+                Parent Account
+              </TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -322,6 +336,9 @@ const totalPages = Math.ceil(totalRecords / recordsPerPage);
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">
                   <Badge>{account.broker}</Badge>
+                </TableCell>
+                <TableCell className="hidden sm:table-cell">
+                  {account.parent_account_name}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
@@ -359,11 +376,11 @@ const totalPages = Math.ceil(totalRecords / recordsPerPage);
             ))}
           </TableBody>
         </Table>
- {/* Pagination controls */}
- <Pagination>
+        {/* Pagination controls */}
+        <Pagination>
           <PaginationPrevious
             onClick={() => handlePageChange(currentPage - 1)}
-          // disabled={currentPage === 1}
+            // disabled={currentPage === 1}
           />
 
           <PaginationContent>
@@ -375,7 +392,11 @@ const totalPages = Math.ceil(totalRecords / recordsPerPage);
                     onClick={() => handlePageChange(page)}
                     isActive={currentPage === page}
                     // Apply disabled styles if the link is inactive
-                    className={currentPage === page ? '' : 'pointer-events-none opacity-50'}
+                    className={
+                      currentPage === page
+                        ? ""
+                        : "pointer-events-none opacity-50"
+                    }
                   >
                     {page}
                   </PaginationLink>
@@ -386,23 +407,30 @@ const totalPages = Math.ceil(totalRecords / recordsPerPage);
 
           <PaginationNext
             onClick={() => handlePageChange(currentPage + 1)}
-          // disabled={currentPage === totalPages}
+            // disabled={currentPage === totalPages}
           />
         </Pagination>
-
 
         {/* delete dialog */}
 
         {isConfirmModalOpen && (
-          <Dialog open={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)}>
+          <Dialog
+            open={isConfirmModalOpen}
+            onClose={() => setIsConfirmModalOpen(false)}
+          >
             <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
             <div className="fixed inset-0 flex items-center justify-center p-4">
               <div className="bg-white p-6 rounded-lg w-full max-w-sm mx-auto">
                 <h2 className="text-lg font-semibold">Confirm Deletion</h2>
-                <p>Are you sure you want to delete this account? This action cannot be undone.</p>
+                <p>
+                  Are you sure you want to delete this account? This action
+                  cannot be undone.
+                </p>
                 <div className="mt-4 flex gap-2">
                   <Button onClick={handleConfirmDelete}>Confirm</Button>
-                  <Button onClick={() => setIsConfirmModalOpen(false)}>Cancel</Button>
+                  <Button onClick={() => setIsConfirmModalOpen(false)}>
+                    Cancel
+                  </Button>
                 </div>
               </div>
             </div>
@@ -419,6 +447,17 @@ const totalPages = Math.ceil(totalRecords / recordsPerPage);
               <div className="bg-white p-6 rounded-lg w-full max-w-sm mx-auto">
                 <h2 className="text-lg font-semibold">Add New Account</h2>
                 <form onSubmit={handleAddSubmit} className="mt-4">
+                  <label className="block">
+                    Parent Account Name:
+                    <input
+                      type="text"
+                      name="parent_account_name"
+                      value={newAccountValues.parent_account_name}
+                      onChange={handleNewAccountChange}
+                      className="mt-1 block w-full border border-gray-300 rounded p-2"
+                      required
+                    />
+                  </label>
                   <label className="block">
                     Account Name:
                     <input
@@ -478,7 +517,7 @@ const totalPages = Math.ceil(totalRecords / recordsPerPage);
                     <Button type="submit">Add Account</Button>
                     <Button
                       type="button"
-                      onClick={() => setIsAddModalOpen(false)}
+                      onClick={modalClose}
                     >
                       Cancel
                     </Button>
@@ -495,6 +534,16 @@ const totalPages = Math.ceil(totalRecords / recordsPerPage);
               <div className="bg-white p-6 rounded-lg w-full max-w-sm mx-auto">
                 <h2 className="text-lg font-semibold">Edit Account</h2>
                 <form onSubmit={handleSubmit} className="mt-4">
+                <label className="block">
+                    Parent Account Name:
+                    <input
+                      type="text"
+                      name="parent_account_name"
+                      value={formValues.parent_account_name}
+                      onChange={handleFormChange}
+                      className="mt-1 block w-full border border-gray-300 rounded p-2"
+                    />
+                  </label>
                   <label className="block">
                     Account Name:
                     <input

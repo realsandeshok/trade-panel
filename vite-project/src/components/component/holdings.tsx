@@ -37,8 +37,6 @@ import {
   // PaginationEllipsis,
 } from "@/components/ui/pagination";
 
-
-
 interface Holding {
   scriptName: string;
   totalQuantity: number;
@@ -56,7 +54,7 @@ interface Transaction {
   purchaseDate: string;
   quantity: number;
   eachPrice: number;
-  type:string;
+  transactionType: string;
   purchaseValue: number;
 }
 
@@ -73,19 +71,15 @@ const Holdings = () => {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [filteredHoldings, setFilteredHoldings] = useState<Holding[]>([]);
 
-
   const [summaryCurrentPage, setSummaryCurrentPage] = useState(1);
   const [generalCurrentPage, setGeneralCurrentPage] = useState(1);
   // const [currentPage,setCurrentPage] = useState(1)
   const [totalRecords, setTotalRecords] = useState<number>(0);
   const recordsPerPage = 10;
 
-
   useEffect(() => {
     fetchHoldings();
   }, []);
-
-
 
   // Fetch total records once to calculate the total number of pages
   useEffect(() => {
@@ -97,7 +91,7 @@ const Holdings = () => {
         }
         const data = await response.json();
         // console.log(data.length)
-        setTotalRecords(data.length);  // Assuming the API returns the full array of transactions
+        setTotalRecords(data.length); // Assuming the API returns the full array of transactions
         // console.log(setTotalRecords)
         // console.log(totalRecords)
       } catch (error) {
@@ -107,10 +101,11 @@ const Holdings = () => {
     fetchTotalRecords();
   }, []);
 
-
   const fetchHoldings = async () => {
     try {
-      const response = await fetch("http://localhost:3000/holdings?page=${currentPage}&limit=${recordsPerPage}");
+      const response = await fetch(
+        "http://localhost:3000/holdings?page=${currentPage}&limit=${recordsPerPage}"
+      );
       const data: Holding[] = await response.json();
 
       // Ensure numerical values are correct
@@ -125,6 +120,7 @@ const Holdings = () => {
           quantity: parseFloat(transaction.quantity.toString()),
           purchaseValue: parseFloat(transaction.purchaseValue.toString()),
           eachPrice: parseFloat(transaction.eachPrice.toString()),
+          transactionType: transaction.transactionType
         })),
       }));
 
@@ -214,11 +210,19 @@ const Holdings = () => {
   const indexOfLastSummaryHoldings = summaryCurrentPage * recordsPerPage;
   const indexOfLastGeneralHoldings = generalCurrentPage * recordsPerPage;
 
-  const indexOfFirstSummaryHoldings = indexOfLastSummaryHoldings - recordsPerPage;
-  const indexOfFirstGeneralHoldings = indexOfLastGeneralHoldings - recordsPerPage;
+  const indexOfFirstSummaryHoldings =
+    indexOfLastSummaryHoldings - recordsPerPage;
+  const indexOfFirstGeneralHoldings =
+    indexOfLastGeneralHoldings - recordsPerPage;
 
-  const summaryCurrentHoldings = filteredHoldings.slice(indexOfFirstSummaryHoldings, indexOfLastSummaryHoldings);
-  const generalCurrentHoldings = filteredHoldings.slice(indexOfFirstGeneralHoldings, indexOfLastGeneralHoldings);
+  const summaryCurrentHoldings = filteredHoldings.slice(
+    indexOfFirstSummaryHoldings,
+    indexOfLastSummaryHoldings
+  );
+  const generalCurrentHoldings = filteredHoldings.slice(
+    indexOfFirstGeneralHoldings,
+    indexOfLastGeneralHoldings
+  );
 
   const totalPages = Math.ceil(totalRecords / recordsPerPage);
 
@@ -332,6 +336,7 @@ const Holdings = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead></TableHead>
                   <TableHead>Script Name</TableHead>
                   <TableHead>Total Quantity</TableHead>
                   <TableHead>Total Purchase Value</TableHead>
@@ -340,7 +345,7 @@ const Holdings = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredHoldings.map((holding) => (
+                {generalCurrentHoldings.map((holding) => (
                   <React.Fragment key={holding.scriptName}>
                     {" "}
                     {/* Use React.Fragment with a key */}
@@ -380,6 +385,7 @@ const Holdings = () => {
                                   <TableHead>Quantity</TableHead>
                                   <TableHead>Each Price</TableHead>
                                   <TableHead>Purchase Value</TableHead>
+                                  <TableHead>Transaction Type</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -404,6 +410,9 @@ const Holdings = () => {
                                         ₹
                                         {transaction.purchaseValue.toLocaleString()}
                                       </TableCell>
+                                      <TableCell>
+                                      {transaction.transactionType === 'buy' ? 'Purchase' : 'Sale'}
+                                      </TableCell>
                                     </TableRow>
                                   )
                                 )}
@@ -420,7 +429,7 @@ const Holdings = () => {
             <Pagination>
               <PaginationPrevious
                 onClick={() => handleGeneralPageChange(generalCurrentPage - 1)}
-              // disabled={currentPage === 1}
+                // disabled={currentPage === 1}
               />
 
               <PaginationContent>
@@ -432,7 +441,11 @@ const Holdings = () => {
                         onClick={() => handleGeneralPageChange(page)}
                         isActive={generalCurrentPage === page}
                         // Apply disabled styles if the link is inactive
-                        className={generalCurrentPage === page ? '' : 'pointer-events-none opacity-50'}
+                        className={
+                          generalCurrentPage === page
+                            ? ""
+                            : "pointer-events-none opacity-50"
+                        }
                       >
                         {page}
                       </PaginationLink>
@@ -443,11 +456,10 @@ const Holdings = () => {
 
               <PaginationNext
                 onClick={() => handleGeneralPageChange(generalCurrentPage + 1)}
-              // disabled={currentPage === totalPages}
+                // disabled={currentPage === totalPages}
               />
             </Pagination>
           </TabsContent>
-
 
           <TabsContent value="summary">
             <table className="w-full">
@@ -466,8 +478,14 @@ const Holdings = () => {
                   <tr key={holding.scriptName}>
                     <td className="px-4 py-2">{holding.scriptName}</td>
                     <td className="px-4 py-2">
-                      {holding.transactions.map((transaction, index) => (
-                        <div key={index}>{transaction.accountHolder}</div>
+                      {[
+                        ...new Set(
+                          holding.transactions.map(
+                            (transaction) => transaction.accountHolder
+                          )
+                        ),
+                      ].map((accountHolder) => (
+                        <div key={accountHolder}>{accountHolder}</div>
                       ))}
                     </td>
                     <td className="px-4 py-2 text-right">
@@ -484,7 +502,7 @@ const Holdings = () => {
             <Pagination>
               <PaginationPrevious
                 onClick={() => handleSummaryPageChange(summaryCurrentPage - 1)}
-              // disabled={currentPage === 1}
+                // disabled={currentPage === 1}
               />
 
               <PaginationContent>
@@ -496,7 +514,11 @@ const Holdings = () => {
                         onClick={() => handleSummaryPageChange(page)}
                         isActive={summaryCurrentPage === page}
                         // Apply disabled styles if the link is inactive
-                        className={summaryCurrentPage === page ? '' : 'pointer-events-none opacity-50'}
+                        className={
+                          summaryCurrentPage === page
+                            ? ""
+                            : "pointer-events-none opacity-50"
+                        }
                       >
                         {page}
                       </PaginationLink>
@@ -507,7 +529,7 @@ const Holdings = () => {
 
               <PaginationNext
                 onClick={() => handleSummaryPageChange(summaryCurrentPage + 1)}
-              // disabled={currentPage === totalPages}
+                // disabled={currentPage === totalPages}
               />
             </Pagination>
             <div className="mt-6 bg-white rounded-lg shadow-md p-4">
