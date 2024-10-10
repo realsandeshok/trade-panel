@@ -21,7 +21,12 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { useEffect, useState } from "react";
-import { CirclePlusIcon, FilePenIcon, Trash2Icon } from "lucide-react";
+import {
+  CirclePlusIcon,
+  FilePenIcon,
+  ImportIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { Dialog } from "@headlessui/react";
 import toast from "react-hot-toast";
 import {
@@ -33,7 +38,7 @@ import {
   PaginationNext,
   // PaginationEllipsis,
 } from "@/components/ui/pagination";
-
+import { useDropzone } from 'react-dropzone';
 
 interface Script {
   id: number;
@@ -67,12 +72,9 @@ export function Scripts() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false); // For delete confirmation dialog
   const [scriptToDelete, setScriptToDelete] = useState<number | null>(null); // Track which script to delete
 
-
-  
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState<number>(0);
   const recordsPerPage = 10;
-
 
   useEffect(() => {
     // Fetch data from the API
@@ -109,7 +111,7 @@ export function Scripts() {
           console.error("Error deleting script:", error);
           toast.error("Error deleting script.", {
             duration: 3000,
-            position: 'top-right',
+            position: "top-right",
           });
         })
         .finally(() => {
@@ -118,7 +120,6 @@ export function Scripts() {
         });
     }
   };
-
 
   const handleNewScriptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -141,14 +142,14 @@ export function Scripts() {
         setIsAddModalOpen(false);
         toast.success("Script added successfully", {
           duration: 3000,
-          position: 'top-right',
-        })
+          position: "top-right",
+        });
       })
       .catch((error) => {
         console.error("Error adding script:", error);
         toast.error("Error adding script.", {
           duration: 3000,
-          position: 'top-right',
+          position: "top-right",
         });
       });
       setNewScriptValues({
@@ -200,13 +201,13 @@ export function Scripts() {
           setIsModalOpen(false);
           toast.success("Script updated successfully!", {
             duration: 3000,
-            position: 'top-right',
+            position: "top-right",
           });
         } else {
           console.error("Failed to update script");
           toast.error("Failed to update script.", {
             duration: 3000,
-            position: 'top-right',
+            position: "top-right",
           });
         }
       })
@@ -214,7 +215,7 @@ export function Scripts() {
         console.error("Error updating script:", error);
         toast.error("Error updating script.", {
           duration: 3000,
-          position: 'top-right',
+          position: "top-right",
         });
       });
   };
@@ -228,32 +229,31 @@ export function Scripts() {
   const indexOfFirstScript = indexOfLastScript - recordsPerPage;
   const currentScripts = scripts.slice(indexOfFirstScript, indexOfLastScript);
 
-
-    // Fetch total records once to calculate the total number of pages
-    useEffect(() => {
-      const fetchTotalRecords = async () => {
-        try {
-          const response = await fetch("http://localhost:3000/scripts");
-          if (!response.ok) {
-            throw new Error("Failed to fetch total scripts");
-          }
-          const data = await response.json();
-          setTotalRecords(data.length); // Assuming the API returns the full array of scripts
-        } catch (error) {
-          console.error("Error fetching total scripts:", error);
+  // Fetch total records once to calculate the total number of pages
+  useEffect(() => {
+    const fetchTotalRecords = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/scripts");
+        if (!response.ok) {
+          throw new Error("Failed to fetch total scripts");
         }
-      };
-  
-      fetchTotalRecords();
-    }, []);
+        const data = await response.json();
+        setTotalRecords(data.length); // Assuming the API returns the full array of scripts
+      } catch (error) {
+        console.error("Error fetching total scripts:", error);
+      }
+    };
 
-
+    fetchTotalRecords();
+  }, []);
 
   // Fetch scripts data based on current page
   useEffect(() => {
     const fetchScripts = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/scripts?page=${currentPage}&limit=${recordsPerPage}`);
+        const response = await fetch(
+          `http://localhost:3000/scripts?page=${currentPage}&limit=${recordsPerPage}`
+        );
         if (!response.ok) {
           throw new Error("Failed to fetch scripts");
         }
@@ -279,6 +279,38 @@ export function Scripts() {
     });
   };
 
+  // Upload CSV
+// Upload CSV
+const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  onDrop: async (acceptedFiles) => {
+    if (acceptedFiles.length === 0) {
+      console.error("No file selected");
+      return;
+    }
+
+    const file = acceptedFiles[0];
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('http://localhost:3000/scripts/uploadcsv', { // Ensure this matches your backend route
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(`File uploaded successfully: ${data.message}`);
+      
+    } catch (error) {
+      console.error("Error uploading file:", error);
+    }
+  },
+});
+
 
   return (
     <Card x-chunk="dashboard-06-chunk-0">
@@ -289,16 +321,38 @@ export function Scripts() {
             Manage your scripts and view details.
           </CardDescription>
         </div>
-        <Button
-          size="sm"
-          className="h-8 gap-1"
-          onClick={() => setIsAddModalOpen(true)}
-        >
-          <CirclePlusIcon className="h-3.5 w-3.5" />
-          <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-            Add script
-          </span>
-        </Button>
+        <div className="flex flex-row space-x-4">
+          <div {...getRootProps()} className="dropzone">
+            <input {...getInputProps()} />
+            {isDragActive ? (
+              <p>Drop the CSV file here ...</p>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1"
+                onClick={() => {
+                  // Handle click event here
+                }}
+              >
+                <ImportIcon className="h-3.5 w-3.5" />
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                  Import
+                </span>
+              </Button>
+            )}
+          </div>
+          <Button
+            size="sm"
+            className="h-8 gap-1"
+            onClick={() => setIsAddModalOpen(true)}
+          >
+            <CirclePlusIcon className="h-3.5 w-3.5" />
+            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+              Add script
+            </span>
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <Table>
@@ -366,11 +420,11 @@ export function Scripts() {
             ))}
           </TableBody>
         </Table>
-             {/* Pagination controls */}
-             <Pagination>
+        {/* Pagination controls */}
+        <Pagination>
           <PaginationPrevious
             onClick={() => handlePageChange(currentPage - 1)}
-          // disabled={currentPage === 1}
+            // disabled={currentPage === 1}
           />
 
           <PaginationContent>
@@ -382,7 +436,11 @@ export function Scripts() {
                     onClick={() => handlePageChange(page)}
                     isActive={currentPage === page}
                     // Apply disabled styles if the link is inactive
-                    className={currentPage === page ? '' : 'pointer-events-none opacity-50'}
+                    className={
+                      currentPage === page
+                        ? ""
+                        : "pointer-events-none opacity-50"
+                    }
                   >
                     {page}
                   </PaginationLink>
@@ -393,11 +451,9 @@ export function Scripts() {
 
           <PaginationNext
             onClick={() => handlePageChange(currentPage + 1)}
-          // disabled={currentPage === totalPages}
+            // disabled={currentPage === totalPages}
           />
         </Pagination>
-
-        
 
         {isAddModalOpen && (
           <Dialog
@@ -557,7 +613,9 @@ export function Scripts() {
           <div className="fixed inset-0 flex items-center justify-center p-4">
             <div className="bg-white p-6 rounded-lg w-full max-w-sm mx-auto">
               <h2 className="text-lg font-semibold">Confirm Deletion</h2>
-              <p className="mt-2">Are you sure you want to delete this script?</p>
+              <p className="mt-2">
+                Are you sure you want to delete this script?
+              </p>
               <div className="mt-4 flex justify-end gap-2">
                 <Button
                   variant="ghost"
