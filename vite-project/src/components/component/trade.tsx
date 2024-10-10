@@ -34,6 +34,7 @@ import {
   PaginationNext,
   // PaginationEllipsis,
 } from "@/components/ui/pagination";
+import { format } from "date-fns";
 
 interface Scripts {
   id: number;
@@ -44,7 +45,7 @@ interface accounts {
   id: number;
   account_name: string;
   broker: string;
-  brokerage_percentage: string;
+  brokerage_percentage: number;
 }
 
 interface transactions {
@@ -52,15 +53,18 @@ interface transactions {
   script_name: string;
   quantity: string;
   market_cost: string;
-  brokerage: string;
+  brokerage: number;
   purchase_date: string;
   purchaseDate: string;
   accountHolder: string;
   type: string;
   eachPrice: number;
   purchaseValue: number;
+  account_name: string;
+  final_sell_value: number;
+  total_sell_value: number;
+  sell_market_cost: number;
 }
-
 
 interface Holding {
   scriptName: string;
@@ -73,28 +77,27 @@ interface Holding {
   // eachPrice:number;
 }
 
-
-
 export function Trade() {
   const [open, setOpen] = useState(false);
   const [sellOpen, setSellOpen] = useState(false);
   const [accounts, setAccounts] = useState<accounts[]>([]);
   const [scripts, setScripts] = useState<Scripts[]>([]);
   const [transactions, setTransactions] = useState<transactions[]>([]);
-  const [transactionType, setTransactionType] = useState(''); // Tracks transaction type ("buy" or "sell")
+  const [transactionType, setTransactionType] = useState(""); // Tracks transaction type ("buy" or "sell")
   const [selectedScript, setSelectedScript] = useState<string>("");
   const [accountHolders, setAccountHolders] = useState<transactions[]>([]);
   const [purchaseDate, setPurchaseDate] = useState<string | null>(null);
-  const [selectedAccountHolder, setSelectedAccountHolder] = useState<string>("");
+  const [selectedAccountHolder, setSelectedAccountHolder] =
+    useState<string>("");
   const [totalValue, setTotalValue] = useState<number>(0);
   const [eachValue, setEachValue] = useState<number>(0);
-  // const [purchaseValue, setPurchaseValue] = useState<number>(0);
+  const [transactionsUpdated, setTransactionsUpdated] = useState(false);
 
-  const [brokerage, setBrokerage] = useState("")
-  // const [sellmarketcost, setSellMarketCost] = useState("") 
+  const [brokerage, setBrokerage] = useState(0);
+  // const [sellmarketcost, setSellMarketCost] = useState("")
   const [quantity, setQuantity] = useState<number>(0);
   const [holdings, setHoldings] = useState<Holding[]>([]);
-  const [accountId, setAccountId] = useState<number>(0)
+  const [accountId, setAccountId] = useState<number>(0);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState<number>(0);
@@ -105,41 +108,44 @@ export function Trade() {
     script: "",
     quantity: "",
     cost: "",
-    brokerage: "",
+    brokerage: 0,
     date: "",
     account: "",
   });
 
-
   const [sellFormData, setSellFormData] = useState({
-    type: '',
-    script: '',
-    account: '',
-    quantity: '',
-    each_value: '',
-    market_cost: '',
-    selling_quantity: '',
-    total_cost: '',
-    total_sell_value: '',
-    purchase_date: '',
+    type: "",
+    script: "",
+    account: "",
+    quantity: "",
+    each_value: "",
+    market_cost: "",
+    selling_quantity: "",
+    total_cost: "",
+    total_sell_value: "",
+    purchase_date: "",
 
-    sell_market_cost: '',
-    brokerage: '',
-    f_sell_value: '',
+    sell_market_cost: "",
+    brokerage: 0,
+    f_sell_value: 0,
     // t_sell_value: '',
-    p_l: '',
+    p_l: "",
 
-    sell_date: '',
-    term: '',
+    sell_date: "",
+    term: "",
   });
 
   // Function to calculate Final Selling value in Sell Form
-  const f_sellingValue = (parseFloat(sellFormData.sell_market_cost) - parseFloat(brokerage)).toFixed(2)
+  const f_sellingValue =
+    parseFloat(sellFormData.sell_market_cost) -
+    (parseFloat(sellFormData.sell_market_cost) * brokerage) / 100;
   // Function to calculate Total Selling value in Sell Form
-  const t_sellingValue = (parseFloat(f_sellingValue) * parseFloat(sellFormData.selling_quantity))
+  const t_sellingValue =
+    f_sellingValue * parseFloat(sellFormData.selling_quantity);
   // Function to calculate Total Purchase value in while Selling in Sell Form
-  const totalPurchaseValue = eachValue * parseFloat(sellFormData.selling_quantity)
-  const profit_loss = t_sellingValue - totalPurchaseValue
+  const totalPurchaseValue =
+    eachValue * parseFloat(sellFormData.selling_quantity);
+  const profit_loss = t_sellingValue - totalPurchaseValue;
   // Fetch accounts from the API
   useEffect(() => {
     async function fetchAccounts() {
@@ -167,19 +173,6 @@ export function Trade() {
     fetchScripts();
   }, []);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
   // Handle page change
   const handlePageChange = (page: number) => {
     if (page > 0 && page <= Math.ceil(totalRecords / recordsPerPage)) {
@@ -188,9 +181,10 @@ export function Trade() {
   };
   const indexOfLastTransaction = currentPage * recordsPerPage;
   const indexOfFirstTransaction = indexOfLastTransaction - recordsPerPage;
-  const currentTransactions = transactions.slice(indexOfFirstTransaction, indexOfLastTransaction);
-
-
+  const currentTransactions = transactions.slice(
+    indexOfFirstTransaction,
+    indexOfLastTransaction
+  );
 
   // Fetch total records once to calculate the total number of pages
   useEffect(() => {
@@ -202,7 +196,7 @@ export function Trade() {
         }
         const data = await response.json();
         // console.log(data.length)
-        setTotalRecords(data.length);  // Assuming the API returns the full array of transactions
+        setTotalRecords(data.length); // Assuming the API returns the full array of transactions
         // console.log(setTotalRecords)
         // console.log(totalRecords)
       } catch (error) {
@@ -212,14 +206,14 @@ export function Trade() {
     fetchTotalRecords();
   }, []);
 
-
-
   // fetch transactions
   useEffect(() => {
     // Fetch transactions
     const fetchTransactions = async () => {
       try {
-        const response = await fetch("http://localhost:3000/transactions?page=${currentPage}&limit=${recordsPerPage}");
+        const response = await fetch(
+          "http://localhost:3000/transactions?page=${currentPage}&limit=${recordsPerPage}"
+        );
         if (!response.ok) {
           throw new Error("Failed to fetch transactions");
         }
@@ -230,21 +224,9 @@ export function Trade() {
       }
     };
     fetchTransactions();
-  }, [currentPage]);
+  }, [currentPage, transactionsUpdated]);
 
   const totalPages = Math.ceil(totalRecords / recordsPerPage);
-
-
-
-
-
-
-
-
-
-
-
-
 
   //fetch holdings
   useEffect(() => {
@@ -261,34 +243,30 @@ export function Trade() {
         ...holding,
         transactions: holding.transactions.map((transaction) => ({
           ...transaction,
-          //   quantity: parseFloat(transaction.quantity.toString()),
           purchaseValue: parseFloat(transaction.purchaseValue.toString()),
           eachPrice: parseFloat(transaction.eachPrice.toString()),
           purchase_date: transaction.purchase_date,
-          accountHolder: transaction.accountHolder
+          accountHolder: transaction.accountHolder,
         })),
       }));
-      // console.log(parsedData);
-      setHoldings(parsedData)
+      setHoldings(parsedData);
     } catch (error) {
       console.error("Error fetching holdings data:", error);
     }
   };
 
-
-
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
     setSellFormData({
       ...sellFormData,
-      [e.target.name]: e.target.value
-    })
+      [e.target.name]: e.target.value,
+    });
   };
-
 
   // Handle account selection
   const handleAccountChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -298,12 +276,12 @@ export function Trade() {
     setFormData({
       ...formData,
       account: selectedAccount?.account_name || "",
-      brokerage: selectedAccount?.brokerage_percentage || "", // Set brokerage based on selected account
+      brokerage: selectedAccount?.brokerage_percentage || 0, // Set brokerage based on selected account
     });
     setSellFormData({
       ...sellFormData,
-      account: selectedAccount?.account_name || '',
-      brokerage: selectedAccount?.brokerage_percentage || ''  // Set brokerage based on selected account
+      account: selectedAccount?.account_name || "",
+      brokerage: selectedAccount?.brokerage_percentage || 0, // Set brokerage based on selected account
     });
   };
 
@@ -319,16 +297,12 @@ export function Trade() {
     if (selectedHolding) {
       // Update account holders based on selected script
       setAccountHolders(selectedHolding.transactions);
-      // Find transaction for selected account holder
-      //  const accountHolder = selectedAccountHolder; // Make sure this state is updated correctly
-      //  const transaction = selectedHolding.transactions.find(
-      //    (transaction) => transaction.accountHolder === accountHolder
-      //  ); 
     }
-    // const purchaseDate = selectedHolding?.transactions?.[0]?.purchase_date || null;
   };
 
-  const handleAccountHolderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleAccountHolderChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
     const accountHolder = e.target.value;
     setSelectedAccountHolder(accountHolder);
 
@@ -338,7 +312,7 @@ export function Trade() {
     );
 
     if (selectedTransaction && selectedTransaction.purchaseDate) {
-      console.log('selectedTransaction:', selectedTransaction)
+      console.log("selectedTransaction:", selectedTransaction);
       // Set the quantity and total value based on the selected account holder
       setQuantity(parseFloat(selectedTransaction.quantity));
       setTotalValue(selectedTransaction.purchaseValue);
@@ -346,17 +320,16 @@ export function Trade() {
       // Set the purchase date
       setPurchaseDate(selectedTransaction.purchaseDate);
 
-
       const selectedAccount = accounts.find(
         (account) => account.account_name === selectedTransaction.accountHolder
       );
       if (selectedAccount) {
-        setAccountId(selectedAccount.id)
-        const accountId = selectedAccount.id;  // Fetch the account_id
-        const accountName = selectedAccount.account_name;  // Fetch the account_name
+        setAccountId(selectedAccount.id);
+        const accountId = selectedAccount.id; // Fetch the account_id
+        const accountName = selectedAccount.account_name; // Fetch the account_name
 
-        console.log('Selected Account ID:', accountId);
-        console.log('Selected Account Name:', accountName);
+        console.log("Selected Account ID:", accountId);
+        console.log("Selected Account Name:", accountName);
 
         setBrokerage(selectedAccount.brokerage_percentage);
 
@@ -369,8 +342,6 @@ export function Trade() {
       }
     }
   };
-
-
 
   const handleScriptChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedScript = scripts.find(
@@ -395,6 +366,7 @@ export function Trade() {
           market_cost: formData.cost,
           brokerage: formData.brokerage,
           purchase_date: formData.date,
+          account_name: formData.account,
           account_id: accounts.find(
             (account) => account.account_name === formData.account
           )?.id,
@@ -408,80 +380,147 @@ export function Trade() {
         throw new Error(errorData.error || "An error occurred");
       }
 
-      const data = await response.json();
+      // const data = await response.json();
       // Handle the response as needed, e.g., show a success message, update UI, etc.
-      console.log("Transaction added:", data);
-
+      // Reset the form if needed
+      setFormData({
+        type: "",
+        script: "",
+        quantity: "",
+        cost: "",
+        brokerage: 0,
+        date: "",
+        account: "",
+      });
       // Close the dialog after successful submission
       setOpen(false);
       toast.success("Purchase successful", {
         duration: 3000,
-        position: 'top-right',
+        position: "top-right",
       });
+      setTransactionsUpdated(true);
     } catch (error) {
       console.error("Error adding transaction:", error);
       toast.error("Error adding transaction.", {
         duration: 3000,
-        position: 'top-right',
+        position: "top-right",
       });
       // Handle the error appropriately, e.g., show an error message
     }
   };
 
-
   const handleSellSubmit = async () => {
     try {
-      const response = await fetch('http://localhost:3000/transactions/add', {
-        method: 'POST',
+      const response = await fetch("http://localhost:3000/transactions/add", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          script_name: selectedScript,             // Use the script name from sellFormData
-          quantity: sellFormData.selling_quantity,               // Quantity being sold
+          script_name: selectedScript, // Use the script name from sellFormData
+          quantity: sellFormData.selling_quantity, // Quantity being sold
           sell_market_cost: sellFormData.sell_market_cost, // Market cost at which shares are sold
-          brokerage: sellFormData.brokerage,            // Brokerage fee
-          sell_date: sellFormData.sell_date,            // Date of sale
-          total_sell_value: t_sellingValue,
+          brokerage: sellFormData.brokerage, // Brokerage fee
+          sell_date: sellFormData.sell_date, // Date of sale
+          total_sell_value: t_sellingValue.toFixed(2),
           market_cost: eachValue,
           account_id: accountId,
-          final_sell_value: f_sellingValue,  // Final sell value
-          profit_loss: profit_loss,         // Profit or loss from the transaction
+          final_sell_value: f_sellingValue.toFixed(2), // Final sell value
+          profit_loss: profit_loss, // Profit or loss from the transaction
           type: transactionType,
           purchase_date: purchaseDate,
         }),
-
       });
-      const account = accounts.find((account) => account.account_name === selectedAccountHolder);
-      console.log('Selected account:', account);
+      const account = accounts.find(
+        (account) => account.account_name === selectedAccountHolder
+      );
+      console.log("Selected account:", account);
 
       if (!response.ok) {
         // Handle non-2xx HTTP responses
         const errorData = await response.json();
-        throw new Error(errorData.error || 'An error occurred');
+        throw new Error(errorData.error || "An error occurred");
       }
 
-      const data = await response.json();
+      // const data = await response.json();
       // Handle the response as needed, e.g., show a success message, update UI, etc.
-      console.log('Transaction added:', data);
+      // Clear the sell form fields after successful submission
+      setSellFormData({
+        type: "",
+        script: "",
+        account: "",
+        quantity: "",
+        each_value: "",
+        market_cost: "",
+        selling_quantity: "",
+        total_cost: "",
+        total_sell_value: "",
+        purchase_date: "",
+        sell_market_cost: "",
+        brokerage: 0,
+        f_sell_value: 0,
+        // t_sell_value: '',
+        p_l: "",
+        sell_date: "",
+        term: "",
+      });
+      setSelectedAccountHolder(""), setSelectedScript("");
+      setBrokerage(0);
 
       // Close the dialog after successful submission
       setSellOpen(false);
       toast.success("Sold successfully!", {
         duration: 3000,
-        position: 'top-right',
+        position: "top-right",
       });
+      setTransactionsUpdated(true); // Add this line
     } catch (error) {
-      console.error('Error adding transaction:', error);
+      console.error("Error adding transaction:", error);
       toast.error("Error adding transaction.", {
         duration: 3000,
-        position: 'top-right',
+        position: "top-right",
       });
       // Handle the error appropriately, e.g., show an error message
     }
-  }
+  };
 
+  const modalSellClose = () => {
+    setSellOpen(false);
+    setSellFormData({
+      type: "",
+      script: "",
+      account: "",
+      quantity: "",
+      each_value: "",
+      market_cost: "",
+      selling_quantity: "",
+      total_cost: "",
+      total_sell_value: "",
+      purchase_date: "",
+      sell_market_cost: "",
+      brokerage: 0,
+      f_sell_value: 0,
+      // t_sell_value: '',
+      p_l: "",
+      sell_date: "",
+      term: "",
+    });
+    setSelectedAccountHolder(""), setSelectedScript("");
+    setBrokerage(0);
+  };
 
+  const modalBuyClose = () => {
+    setOpen(false);
+    setFormData({
+      type: "",
+      script: "",
+      quantity: "",
+      cost: "",
+      brokerage: 0,
+      date: "",
+      account: "",
+    });
+  };
 
   return (
     <Card x-chunk="dashboard-06-chunk-0">
@@ -494,10 +533,24 @@ export function Trade() {
           <Button variant="outline" size="sm">
             Export
           </Button>
-          <Button size="sm" onClick={() => { setOpen(true); setTransactionType('buy') }}>
+          <Button
+            size="sm"
+            onClick={() => {
+              setOpen(true);
+              setTransactionType("buy");
+            }}
+          >
             Buy
           </Button>
-          <Button size="sm" onClick={() => { setSellOpen(true); setTransactionType('sell') }}>Sell</Button>
+          <Button
+            size="sm"
+            onClick={() => {
+              setSellOpen(true);
+              setTransactionType("sell");
+            }}
+          >
+            Sell
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -510,31 +563,58 @@ export function Trade() {
               <TableHead>Price</TableHead>
               <TableHead>Brokerage</TableHead>
               <TableHead>Total Cost</TableHead>
-              <TableHead>Total Purchase Value</TableHead>
-              <TableHead>Purchase Date</TableHead>
+              <TableHead>Total Value</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Account Name</TableHead>
+              <TableHead>Month-Year</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {currentTransactions.map((transaction) => {
               const marketCost = parseInt(transaction.market_cost);
-              const brokerage = parseInt(transaction.brokerage);
+              const brokerage = transaction.brokerage;
               const quantity = parseInt(transaction.quantity);
-
+              const percentBrokerage = transaction.brokerage / 100;
               // Calculate total cost with brokerage
-              const totalCostWithBrokerage = marketCost + brokerage;
-              const totalValue = totalCostWithBrokerage * quantity;
+              const totalCostWithBrokerage = (
+                marketCost +
+                marketCost * percentBrokerage
+              ).toFixed(2);
+              const totalValue = parseFloat(totalCostWithBrokerage) * quantity;
 
               return (
                 <TableRow key={transaction.id}>
-                  <TableCell className="font-medium capitalize">{transaction.type}</TableCell>
+                  <TableCell className="font-medium capitalize">
+                    {transaction.type}
+                  </TableCell>
                   <TableCell>{transaction.script_name}</TableCell>
                   <TableCell>{transaction.quantity}</TableCell>
-                  <TableCell>₹{marketCost} </TableCell>
-                  <TableCell>{brokerage}%</TableCell>
-                  <TableCell>₹{totalCostWithBrokerage}</TableCell>
-                  <TableCell>₹{totalValue}</TableCell>
                   <TableCell>
-                    {(transaction.purchase_date).slice(2, 10)}
+                    {transaction.type === "buy"
+                      ? `₹${marketCost}`
+                      : `₹${transaction.sell_market_cost}`}
+                  </TableCell>
+                  <TableCell>{brokerage}%</TableCell>
+                  <TableCell>
+                    {transaction.type === "buy"
+                      ? `₹${totalCostWithBrokerage}`
+                      : `₹${transaction.final_sell_value}`}
+                  </TableCell>
+                  <TableCell>
+                    {transaction.type === "buy"
+                      ? `₹${totalValue.toFixed(2)}`
+                      : `₹${transaction.total_sell_value}`}
+                  </TableCell>
+                  <TableCell>
+                    {format(new Date(transaction.purchase_date), "dd-MM-yyyy")}
+                  </TableCell>
+                  <TableCell>{transaction.account_name}</TableCell>{" "}
+                  {/* Add this line */}
+                  <TableCell>
+                    {new Date(transaction.purchase_date).toLocaleString(
+                      "default",
+                      { month: "long", year: "numeric" }
+                    )}
                   </TableCell>
                 </TableRow>
               );
@@ -546,7 +626,7 @@ export function Trade() {
         <Pagination>
           <PaginationPrevious
             onClick={() => handlePageChange(currentPage - 1)}
-          // disabled={currentPage === 1}
+            // disabled={currentPage === 1}
           />
 
           <PaginationContent>
@@ -558,7 +638,11 @@ export function Trade() {
                     onClick={() => handlePageChange(page)}
                     isActive={currentPage === page}
                     // Apply disabled styles if the link is inactive
-                    className={currentPage === page ? '' : 'pointer-events-none opacity-50'}
+                    className={
+                      currentPage === page
+                        ? ""
+                        : "pointer-events-none opacity-50"
+                    }
                   >
                     {page}
                   </PaginationLink>
@@ -569,10 +653,9 @@ export function Trade() {
 
           <PaginationNext
             onClick={() => handlePageChange(currentPage + 1)}
-          // disabled={currentPage === totalPages}
+            // disabled={currentPage === totalPages}
           />
         </Pagination>
-
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent>
@@ -662,7 +745,7 @@ export function Trade() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => setOpen(false)}
+                  onClick={modalBuyClose}
                 >
                   Cancel
                 </Button>
@@ -671,17 +754,26 @@ export function Trade() {
           </DialogContent>
         </Dialog>
 
-
-
         {/* sell dialog */}
         <Dialog open={sellOpen} onOpenChange={setSellOpen}>
           <DialogContent className="max-w-md mx-auto h-auto max-h-[90vh] overflow-y-hidden p-6 rounded-lg bg-white shadow-lg">
             <DialogHeader>
-              <DialogTitle className="text-lg font-semibold">Sell Share</DialogTitle>
+              <DialogTitle className="text-lg font-semibold">
+                Sell Share
+              </DialogTitle>
             </DialogHeader>
 
-            <form onSubmit={(e) => { e.preventDefault(); handleSellSubmit(); }} className="overflow-y-scroll max-h-[80vh] hide-scrollbar">
-              <div className="space-y-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSellSubmit();
+              }}
+              className="overflow-y-scroll max-h-[80vh] hide-scrollbar space-y-3 p-1"
+            >
+              <div>
+                <label htmlFor="Scripts" className="block font-medium pb-1">
+                  Select Scripts
+                </label>
                 <select
                   name="Scripts"
                   value={selectedScript}
@@ -696,161 +788,187 @@ export function Trade() {
                     </option>
                   ))}
                 </select>
-
+              </div>
+              <div>
+                <label htmlFor="account" className="block font-medium pb-1">
+                  Select Account
+                </label>
                 <select
                   name="account"
                   value={selectedAccountHolder}
                   onChange={handleAccountHolderChange}
                   disabled={!selectedScript}
                   className="w-full border p-2 rounded"
+                  required
                 >
                   <option value="">Select an account</option>
-                  {accountHolders.map((transaction, index) => (
-                    <option key={index} value={transaction.accountHolder}>
+                  {accountHolders.map((transaction) => (
+                    <option
+                      key={transaction.id}
+                      value={transaction.accountHolder}
+                    >
                       {transaction.accountHolder}
                     </option>
                   ))}
                 </select>
-                <span>{selectedAccountHolder} holds {quantity} share of {selectedScript}, each share bought at price {eachValue}, which costed {totalValue} for {quantity} shares on {purchaseDate ? `${purchaseDate.slice(8, 10)}-${purchaseDate.slice(5, 7)}-${purchaseDate.slice(0, 4)}` : ''}</span>
-                {/* <Input
+              </div>
+              <div className="bg-gray-100 p-3 rounded text-sm ">
+                <span>
+                  {selectedAccountHolder} holds <strong>{quantity}</strong>{" "}
+                  share(s) of <strong>{selectedScript}</strong>, each bought at{" "}
+                  <strong>₹{eachValue}</strong>, costing{" "}
+                  <strong>₹{totalValue}</strong> for <strong>{quantity}</strong>{" "}
+                  share(s) on{" "}
+                  <strong>
+                    {purchaseDate
+                      ? `${purchaseDate.slice(8, 10)}-${purchaseDate.slice(
+                          5,
+                          7
+                        )}-${purchaseDate.slice(0, 4)}`
+                      : ""}
+                  </strong>
+                </span>
+              </div>
 
-                  type="text"
-                  name="quantity"
-                  placeholder="Quantity"
-                  value={'Holds ' + quantity + ' shares'}
-                  onChange={handleInputChange}
-                  readOnly
-                />
-                <Input
-                  type="text"
-                  name="each_value"
-                  placeholder="Total Value of Script"
-                  value={'Cost for each share is ' + eachValue}
-                  readOnly
-                /> */}
-
-                {/* Each value */}
-                {/* <Input
-                  placeholder="Enter total cost"
-                  type="number"
-                  name="total_cost"
-                  value={eachValue}
-                  onChange={handleInputChange}
-                  readOnly
-                  className="w-full border p-2 rounded"
-                /> */}
-
-                {/* Total purchase Value */}
-                {/* <Input
-                  placeholder="Total purchase value"
-                  type="number"
-                  name="total_selling_value"
-                  value={totalPurchaseValue}
-                  onChange={handleInputChange}
-                  readOnly
-                  className="w-full border p-2 rounded"
-                /> */}
-
-
-                {/* Purchase Date */}
-                {/* <Input
-                                  placeholder="Enter purchase date"
-                                  type="text"
-                                  name="purchase_date"
-                                  value={purchaseDate ? `${purchaseDate.slice(8, 10)}-${purchaseDate.slice(5, 7)}-${purchaseDate.slice(0, 4)}` : ''}
-                                  onChange={handleInputChange}
-                                  readOnly
-                                  className="w-full border p-2 rounded"
-                                /> */}
-                {/* Selling Quantity */}
-                <Input
-                  placeholder="Enter Selling quantity"
-                  type="number"
-                  name="selling_quantity"
-                  value={sellFormData.selling_quantity}
-                  onChange={(e) => {
-                    const sellingQuantity = parseInt(e.target.value);
-
-                    if (sellingQuantity > quantity || sellingQuantity < 0) {
-                      if (sellingQuantity > quantity) {
-                        toast.error("Selling quantity cannot exceed existing quantity.", {
-                          duration: 5000,
-                          position: 'top-right',
-                        });
+              {/* Selling Quantity */}
+              <div className="flex space-x-4">
+                <div className="w-1/2">
+                  <label
+                    htmlFor="selling_quantity"
+                    className="block font-medium pb-1"
+                  >
+                    Enter Selling Quantity
+                  </label>
+                  <Input
+                    type="number"
+                    name="selling_quantity"
+                    value={sellFormData.selling_quantity}
+                    onChange={(e) => {
+                      const sellingQuantity = parseInt(e.target.value);
+                      if (sellingQuantity > quantity || sellingQuantity < 0) {
+                        if (sellingQuantity > quantity) {
+                          toast.error(
+                            "Selling quantity cannot exceed existing quantity.",
+                            { duration: 5000, position: "top-right" }
+                          );
+                        } else {
+                          toast.error(
+                            "Selling quantity cannot be less than 0.",
+                            { duration: 5000, position: "top-right" }
+                          );
+                        }
+                        e.target.value = quantity.toString();
                       } else {
-                        toast.error("Selling quantity cannot be less than 0.", {
-                          duration: 5000,
-                          position: 'top-right',
-                        });
+                        handleInputChange(e);
                       }
-                      e.target.value = quantity.toString(); // Reset to existing quantity
-                    } else {
-                      handleInputChange(e); // Call your existing input change handler
-                    }
-                  }}
-
-                  required
-                  className="w-full border p-2 rounded"
-                />
-
-
+                    }}
+                    required
+                    className="w-full border p-2 rounded"
+                  />
+                </div>
                 {/* Selling Market Cost */}
-                <Input
-                  placeholder="Enter selling market cost"
-                  type="number"
-                  name="sell_market_cost"
-                  value={sellFormData.sell_market_cost}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full border p-2 rounded"
-                />
+                <div className="w-1/2">
+                  <label
+                    htmlFor="sell_market_cost"
+                    className="block font-medium pb-1"
+                  >
+                    Enter Selling Market Cost
+                  </label>
+                  <Input
+                    type="number"
+                    name="sell_market_cost"
+                    value={sellFormData.sell_market_cost}
+                    onChange={(e) => {
+                      const marketCost = parseFloat(e.target.value);
+                      if (marketCost <= 0) {
+                        toast.error(
+                          "Selling market cost must be greater than 0.",
+                          { duration: 5000, position: "top-right" }
+                        );
+                        e.target.value = ""; // Reset the value if it’s invalid
+                      } else {
+                        handleInputChange(e);
+                      }
+                    }}
+                    required
+                    className="w-full border p-2 rounded"
+                  />
+                </div>
+              </div>
 
-                {/* Show brokerage automatically based on selected account */}
+              {/* Show brokerage automatically based on selected account */}
+              <div>
+                <label htmlFor="brokerage" className="block font-medium pb-1">
+                  Brokerage Percentage
+                </label>
                 <Input
-                  placeholder="Brokerage percentage"
                   type="number"
                   name="brokerage"
                   value={brokerage}
                   readOnly
                   className="w-full border p-2 rounded bg-gray-200"
                 />
+              </div>
 
-                {/* Final Selling Value */}
-                <Input
-                  placeholder="Final selling value"
-                  type="number"
-                  name="f_sell_value"
-                  value={f_sellingValue}
-                  onChange={handleInputChange}
-                  readOnly
-                  className="w-full border p-2 rounded"
-                />
+              {/* Final Selling Value */}
+              <div className="flex space-x-4">
+                <div className="w-1/2">
+                  <label
+                    htmlFor="f_sell_value"
+                    className="block font-medium pb-1"
+                  >
+                    Final Selling Value
+                  </label>
+                  <Input
+                    type="number"
+                    name="f_sell_value"
+                    value={f_sellingValue.toFixed(2)}
+                    onChange={handleInputChange}
+                    readOnly
+                    className="w-full border p-2 rounded"
+                  />
+                </div>
 
                 {/* Total Selling Value */}
-                <Input
-                  placeholder="Total selling value"
-                  type="number"
-                  name="t_sell_value"
-                  value={t_sellingValue}
-                  onChange={handleInputChange}
-                  readOnly
-                  className="w-full border p-2 rounded"
-                />
+                <div className="w-1/2">
+                  <label
+                    htmlFor="t_sell_value"
+                    className="block font-medium pb-1"
+                  >
+                    Total Selling Value
+                  </label>
+                  <Input
+                    type="number"
+                    name="t_sell_value"
+                    value={t_sellingValue.toFixed(2)}
+                    onChange={handleInputChange}
+                    readOnly
+                    className="w-full border p-2 rounded"
+                  />
+                </div>
+              </div>
 
-                {/* Profit/Loss */}
+              {/* Profit/Loss */}
+              <div>
+                <label htmlFor="p_l" className="block font-medium pb-1">
+                  Profit/Loss
+                </label>
                 <Input
-                  placeholder="Profit/Loss"
                   type="number"
                   name="p_l"
-                  value={profit_loss}
+                  value={profit_loss.toFixed(2)}
                   onChange={handleInputChange}
                   readOnly
                   className="w-full border p-2 rounded"
                 />
+              </div>
 
-                {/* Selling Date */}
+              {/* Selling Date */}
+              <div>
+                <label htmlFor="sell_date" className="block font-medium pb-1">
+                  Enter Selling Date
+                </label>
                 <Input
-                  placeholder="Enter selling date"
                   type="date"
                   name="sell_date"
                   value={sellFormData.sell_date}
@@ -858,8 +976,13 @@ export function Trade() {
                   required
                   className="w-full border p-2 rounded"
                 />
+              </div>
 
-                {/* Longterm/Shortterm */}
+              {/* Longterm/Shortterm */}
+              <div>
+                <label htmlFor="term" className="block font-medium pb-1">
+                  Select Term
+                </label>
                 <select
                   name="term"
                   value={sellFormData.term}
@@ -874,14 +997,21 @@ export function Trade() {
               </div>
 
               <DialogFooter className="p-3">
-                <Button type="submit" size="sm">Submit</Button>
-                <Button type="button" size="sm" variant="outline" onClick={() => setSellOpen(false)}>Cancel</Button>
+                <Button type="submit" size="sm">
+                  Submit
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={modalSellClose}
+                >
+                  Cancel
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
-
-
       </CardContent>
     </Card>
   );

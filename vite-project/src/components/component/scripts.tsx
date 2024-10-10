@@ -152,6 +152,13 @@ export function Scripts() {
           position: "top-right",
         });
       });
+      setNewScriptValues({
+        name: "",
+        sector: "",
+        parent_companies: "",
+        portfolio: "",
+        referred: "",
+      });
   };
 
   const handleEdit = (script: Script) => {
@@ -261,6 +268,16 @@ export function Scripts() {
   }, [currentPage]);
 
   const totalPages = Math.ceil(totalRecords / recordsPerPage);
+  const modalClose = () => {
+    setIsAddModalOpen(false);
+    setNewScriptValues({
+      name: "",
+      sector: "",
+      parent_companies: "",
+      portfolio: "",
+      referred: "",
+    });
+  };
 
   // Upload CSV
 // Upload CSV
@@ -456,6 +473,7 @@ const { getRootProps, getInputProps, isDragActive } = useDropzone({
                       value={newScriptValues.name}
                       onChange={handleNewScriptChange}
                       className="mt-1 block w-full border border-gray-300 rounded p-2"
+                      required
                     />
                   </label>
                   <label className="block mt-2">
@@ -466,6 +484,7 @@ const { getRootProps, getInputProps, isDragActive } = useDropzone({
                       value={newScriptValues.sector}
                       onChange={handleNewScriptChange}
                       className="mt-1 block w-full border border-gray-300 rounded p-2"
+                      required
                     />
                   </label>
                   <label className="block mt-2">
@@ -476,6 +495,7 @@ const { getRootProps, getInputProps, isDragActive } = useDropzone({
                       value={newScriptValues.parent_companies}
                       onChange={handleNewScriptChange}
                       className="mt-1 block w-full border border-gray-300 rounded p-2"
+                      required
                     />
                   </label>
                   <label className="block mt-2">
@@ -486,6 +506,7 @@ const { getRootProps, getInputProps, isDragActive } = useDropzone({
                       value={newScriptValues.portfolio}
                       onChange={handleNewScriptChange}
                       className="mt-1 block w-full border border-gray-300 rounded p-2"
+                      required
                     />
                   </label>
                   <label className="block mt-2">
@@ -496,13 +517,14 @@ const { getRootProps, getInputProps, isDragActive } = useDropzone({
                       value={newScriptValues.referred}
                       onChange={handleNewScriptChange}
                       className="mt-1 block w-full border border-gray-300 rounded p-2"
+                      required
                     />
                   </label>
                   <div className="mt-4 flex gap-2">
                     <Button type="submit">Add Script</Button>
                     <Button
                       type="button"
-                      onClick={() => setIsAddModalOpen(false)}
+                      onClick={modalClose}
                     >
                       Cancel
                     </Button>

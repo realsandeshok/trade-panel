@@ -17,12 +17,12 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import { Input } from "@/components/ui/input";
+// import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
-  DropdownMenuLabel,
+  // DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
@@ -91,7 +91,7 @@ export default function App() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link
-                        href="/holdings"
+                        href="/"
                         className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-accent-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                         prefetch={false}
                       >
@@ -207,7 +207,7 @@ export default function App() {
                         <span className="sr-only">Acme Inc</span>
                       </Link> */}
                       <Link
-                        href="/holdings"
+                        href="/"
                         className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
                         prefetch={false}
                       >
@@ -282,37 +282,45 @@ export default function App() {
                   </BreadcrumbList>
                 </Breadcrumb> */}
                 <DynamicBreadcrumbs />
-                <div className="relative ml-auto flex-1 md:grow-0">
+                {/* <div className="relative ml-auto flex-1 md:grow-0">
                   <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="search"
                     placeholder="Search..."
                     className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
                   />
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="overflow-hidden rounded-full"
-                    >
-                      <img
-                        src="/placeholder.svg"
-                        width={36}
-                        height={36}
-                        alt="Avatar"
+                </div> */}
+                <div className="absolute right-5 top-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
                         className="overflow-hidden rounded-full"
-                        style={{ aspectRatio: "36/36", objectFit: "cover" }}
-                      />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>Logout</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      >
+                        <img
+                          src="/placeholder.svg"
+                          width={36}
+                          height={36}
+                          alt="Avatar"
+                          className="overflow-hidden rounded-full"
+                          style={{ aspectRatio: "36/36", objectFit: "cover" }}
+                        />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {/* <DropdownMenuLabel>My Account</DropdownMenuLabel> */}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          localStorage.removeItem("token");
+                        }}
+                      >
+                        Logout
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </header>
             </div>
             <div className="ml-0 sm:ml-12">
@@ -323,9 +331,9 @@ export default function App() {
                 <TooltipProvider>
                   <Routes>
                     {/* <Route path="/" element={<Auth />} /> */}
+                    <Route path="/" element={<Holdings />} />
                     <Route path="/accounts" element={<Accounts />} />
                     <Route path="/scripts" element={<Scripts />} />
-                    <Route path="/holdings" element={<Holdings />} />
                     <Route path="/trade" element={<Trade />} />
                     <Route path="/analytics" element={<Analytics />} />
                     <Route path="/bought-sold" element={<Buysell />} />
@@ -349,7 +357,7 @@ export default function App() {
 const breadcrumbNameMap = {
   accounts: "My Accounts",
   scripts: "Script Management",
-  holdings: "Portfolio Holdings",
+  // holdings: "Portfolio Holdings",
   trade: "Transactions",
   analytics: "Analytics",
   // "bought-sold": "Buy/Sell",
@@ -364,11 +372,11 @@ const DynamicBreadcrumbs = () => {
     <Breadcrumb className="hidden md:flex">
       <BreadcrumbList>
         {/* Always display the Dashboard as the first breadcrumb */}
-        {/* <BreadcrumbItem>
+        <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link href="/holdings">Holdings</Link>
+            <Link href="/">Trade Panel</Link>
           </BreadcrumbLink>
-        </BreadcrumbItem> */}
+        </BreadcrumbItem>
 
         {pathnames.map((segment, index) => {
           const isLast = index === pathnames.length - 1;
@@ -528,25 +536,25 @@ function PanelLeftIcon(
   );
 }
 
-function SearchIcon(props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.3-4.3" />
-    </svg>
-  );
-}
+// function SearchIcon(props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) {
+//   return (
+//     <svg
+//       {...props}
+//       xmlns="http://www.w3.org/2000/svg"
+//       width="24"
+//       height="24"
+//       viewBox="0 0 24 24"
+//       fill="none"
+//       stroke="currentColor"
+//       strokeWidth="2"
+//       strokeLinecap="round"
+//       strokeLinejoin="round"
+//     >
+//       <circle cx="11" cy="11" r="8" />
+//       <path d="m21 21-4.3-4.3" />
+//     </svg>
+//   );
+// }
 
 // function SettingsIcon(
 //   props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>

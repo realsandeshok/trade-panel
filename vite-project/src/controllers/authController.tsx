@@ -24,7 +24,7 @@ export async function Login(email: string, password: string) {
             }
 
             // Navigate to the home page
-            window.location.href = "/holdings";
+            window.location.href = "/";
         } else {
             // Handle error
             console.error('Login failed:', data);

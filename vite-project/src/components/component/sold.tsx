@@ -125,7 +125,11 @@ export function Sold() {
                 <TableCell>{transaction.script_name}</TableCell>
                 <TableCell>{transaction.quantity}</TableCell>
                 <TableCell>{parseFloat(transaction.final_sell_value).toFixed(2)}</TableCell>
-                <TableCell>{transaction.total_sell_value ? transaction.total_sell_value : 'N/A'}</TableCell>
+                <TableCell>
+                  {transaction.total_sell_value
+                    ? parseFloat((transaction.total_sell_value).toString()).toFixed(2)
+                    : 'N/A'}
+                </TableCell>
                 <TableCell>{new Date(transaction.sell_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'numeric', day: 'numeric' })}</TableCell>
                 <TableCell>{formatPurchaseDate(transaction.sell_date)}</TableCell>
                 <TableCell>{transaction.account_name}</TableCell>
